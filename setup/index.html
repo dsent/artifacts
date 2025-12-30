@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artifacts Monorepo | Initializing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0c;
+            --fg: #e0e0e4;
+            --accent: #00f2ff;
+            --accent-dim: rgba(0, 242, 255, 0.2);
+            --glitch-1: #ff00c1;
+            --glitch-2: #00fff0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--fg);
+            font-family: 'IBM Plex Mono', monospace;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Scanline Effect */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        /* Noise Texture */
+        body::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding: 2rem;
+            border: 1px solid var(--accent-dim);
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(4px);
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .header {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3rem;
+            color: var(--accent);
+            margin-bottom: 2rem;
+            opacity: 0.8;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            letter-spacing: -0.05rem;
+            position: relative;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--fg);
+            opacity: 0.6;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent);
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        .terminal-text {
+            margin-top: 2rem;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            text-align: left;
+            border-top: 1px solid var(--accent-dim);
+            padding-top: 1.5rem;
+            color: #888;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 15px;
+            background: var(--accent);
+            vertical-align: middle;
+            margin-left: 4px;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        @keyframes blink {
+            from, to { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 2rem;
+            font-size: 0.7rem;
+            color: #444;
+            letter-spacing: 0.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">System Status</div>
+        <h1>Artifacts Monorepo</h1>
+        <div class="status">
+            <div class="dot"></div>
+            <span>Awaiting Deployment</span>
+        </div>
+
+        <div class="terminal-text">
+            <div>> Initializing Cloudflare Pages... [OK]</div>
+            <div>> Establishing monorepo structure... [OK]</div>
+            <div>> Ready for artifact injection<span class="cursor"></span></div>
+        </div>
+    </div>
+
+    <div class="footer">
+        &copy; 2025 DSENT // ARTIFACTS.DSENT.ME
+    </div>
+</body>
+</html>

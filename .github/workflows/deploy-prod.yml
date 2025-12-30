@@ -28,36 +28,31 @@ jobs:
       - name: Build Artifacts
         run: |
           mkdir -p dist
-          # Iterate through all directories except hidden ones and known non-artifact folders
-          for dir in */; do
+          for dir in artifacts/*/; do
             dir=${dir%/}
-            if [[ "$dir" == ".github" || "$dir" == "docs" || "$dir" == "dist" || "$dir" == "node_modules" ]]; then
-              continue
-            fi
+            if [[ ! -d "$dir" ]]; then continue; fi
             
-            echo "Processing artifact: $dir"
-            mkdir -p "dist/$dir"
+            artifact_name=$(basename "$dir")
+            echo "Processing artifact: $artifact_name"
+            mkdir -p "dist/$artifact_name"
             
             if [ -f "$dir/package.json" ] && grep -q '"build":' "$dir/package.json"; then
               echo "Building with npm..."
-              cd "$dir" && npm install && npm run build && cd ..
-              cp -r "$dir/dist/"* "dist/$dir/"
+              cd "$dir" && npm install && npm run build && cd ../../
+              cp -r "$dir/dist/"* "dist/$artifact_name/"
             elif [ -f "$dir/pyproject.toml" ] && [ -f "$dir/build.py" ]; then
               echo "Building with uv..."
               uv run --project "$dir" "$dir/build.py"
-              cp -r "$dir/dist/"* "dist/$dir/"
+              cp -r "$dir/dist/"* "dist/$artifact_name/"
             elif [ -f "$dir/build.ps1" ]; then
               echo "Building with PowerShell..."
               pwsh "$dir/build.ps1"
-              cp -r "$dir/dist/"* "dist/$dir/"
+              cp -r "$dir/dist/"* "dist/$artifact_name/"
             else
               echo "No build script found. Copying source files..."
-              # Copy everything except excluded patterns
-              rsync -av --exclude='node_modules' --exclude='.git' --exclude='package-lock.json' --exclude='pyproject.toml' --exclude='AGENTS.md' "$dir/" "dist/$dir/"
+              rsync -av --exclude='node_modules' --exclude='.git' --exclude='package-lock.json' --exclude='pyproject.toml' --exclude='AGENTS.md' "$dir/" "dist/$artifact_name/"
             fi
           done
-
-          # Copy root README and index if needed (optional)
           cp README.md dist/ || true
 
       - name: Deploy to Cloudflare Pages

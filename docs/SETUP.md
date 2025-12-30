@@ -2,12 +2,18 @@
 
 This guide explains how to set up the Artifacts Monorepo for deployment to Cloudflare Pages.
 
+It explains the process for the original repo ([dsent/artifacts](https://github.com/dsent/artifacts) → [artifacts.dsent.me](https://artifacts.dsent.me)).
+
+If you are forking this repo, adjust domain names and settings accordingly.
+
 ## 1. Cloudflare Pages Setup
 
 1. Log in to the [Cloudflare Dashboard](https://dash.cloudflare.com/).
-2. Navigate to **Workers & Pages** > **Create application** > **Pages** > **Direct Upload**.
-3. Name your project `artifacts`.
-4. (Optional) Connect a custom domain like `artifacts.dsent.me`.
+2. Click on the `+` button at the top right corner.
+3. Select **Pages** > **Drag and drop your files** > **Get started**.
+4. Name your project `artifacts`.
+5. Upload the `setup/index.html` file (or the entire `setup/` folder) to initialize the project.
+6. Connect a custom domain (`artifacts.dsent.me`).
 
 ## 2. GitHub Secrets
 
@@ -34,7 +40,14 @@ To serve artifacts from `dsent.me/artifacts/*`, set up a redirect rule in Cloudf
 
 ## 4. Adding New Artifacts
 
-Follow the [monorepo conventions](../AGENTS.md) when adding new artifacts.
+Follow the [monorepo conventions](../AGENTS.md) when adding new artifacts. All artifacts must be placed within the `artifacts/` directory.
+
+### Required Files
+
+- `index.html`: The main entry point.
+- `AGENTS.md`: Project-specific AI instructions (must reference the root `AGENTS.md`).
+- `README.md`: Project documentation.
+- `LICENSE`: (Recommended) Project-specific license.
 
 ### Build Convention Summary
 
