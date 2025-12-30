@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Artifacts Monorepo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;500&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #0a0a0c;
+        --fg: #e0e0e4;
+        --accent: #00f2ff;
+        --accent-dim: rgba(0, 242, 255, 0.1);
+        --item-bg: rgba(255, 255, 255, 0.03);
+        --item-hover: rgba(0, 242, 255, 0.05);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background-color: var(--bg);
+        color: var(--fg);
+        font-family: "IBM Plex Mono", monospace;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 4rem 2rem;
+        position: relative;
+      }
+
+      /* Scanline Effect */
+      body::before {
+        content: " ";
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+          linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+        z-index: 2;
+        background-size: 100% 2px, 3px 100%;
+        pointer-events: none;
+      }
+
+      /* Noise Texture */
+      body::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url("https://grainy-gradients.vercel.app/noise.svg");
+        opacity: 0.05;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .container {
+        position: relative;
+        z-index: 10;
+        width: 100%;
+        max-width: 800px;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 4rem;
+      }
+
+      .header-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3rem;
+        color: var(--accent);
+        margin-bottom: 1rem;
+        opacity: 0.8;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 500;
+        letter-spacing: -0.05rem;
+      }
+
+      .artifact-list {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .artifact-item {
+        display: block;
+        text-decoration: none;
+        color: var(--fg);
+        background: var(--item-bg);
+        border: 1px solid var(--accent-dim);
+        padding: 1.5rem;
+        transition: all 0.2s ease;
+      }
+
+      .artifact-item:hover {
+        background: var(--item-hover);
+        border-color: var(--accent);
+        transform: translateX(5px);
+      }
+
+      .artifact-name {
+        font-size: 1.2rem;
+        font-weight: 500;
+        color: var(--accent);
+        margin-bottom: 0.5rem;
+      }
+
+      .artifact-desc {
+        font-size: 0.9rem;
+        opacity: 0.7;
+        line-height: 1.5;
+      }
+
+      .footer {
+        margin-top: 4rem;
+        font-size: 0.7rem;
+        color: #444;
+        letter-spacing: 0.1rem;
+        text-align: center;
+        z-index: 10;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="header-label">System Index</div>
+        <h1>Artifacts Monorepo</h1>
+      </div>
+
+      <div class="artifact-list">
+        <!-- ARTIFACTS_LIST_PLACEHOLDER -->
+      </div>
+    </div>
+
+    <div class="footer">&copy; 2025 DSENT // ARTIFACTS.DSENT.ME</div>
+  </body>
+</html>

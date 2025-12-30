@@ -59,6 +59,9 @@ jobs:
           done
           cp README.md dist/ || true
 
+      - name: Generate Index
+        run: python scripts/generate_index.py
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
