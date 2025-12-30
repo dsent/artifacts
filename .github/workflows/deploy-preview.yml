@@ -1,0 +1,69 @@
+name: Deploy Preview
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Build Artifacts
+        run: |
+          mkdir -p dist
+          for dir in */; do
+            dir=${dir%/}
+            if [[ "$dir" == ".github" || "$dir" == "docs" || "$dir" == "dist" || "$dir" == "node_modules" ]]; then
+              continue
+            fi
+            
+            echo "Processing artifact: $dir"
+            mkdir -p "dist/$dir"
+            
+            if [ -f "$dir/package.json" ] && grep -q '"build:dev":' "$dir/package.json"; then
+              echo "Building with npm (dev)..."
+              cd "$dir" && npm install && npm run build:dev && cd ..
+              cp -r "$dir/dist/"* "dist/$dir/"
+            elif [ -f "$dir/package.json" ] && grep -q '"build":' "$dir/package.json"; then
+              echo "Building with npm..."
+              cd "$dir" && npm install && npm run build && cd ..
+              cp -r "$dir/dist/"* "dist/$dir/"
+            elif [ -f "$dir/pyproject.toml" ] && [ -f "$dir/build.py" ]; then
+              echo "Building with uv..."
+              uv run --project "$dir" "$dir/build.py"
+              cp -r "$dir/dist/"* "dist/$dir/"
+            elif [ -f "$dir/build.ps1" ]; then
+              echo "Building with PowerShell..."
+              pwsh "$dir/build.ps1"
+              cp -r "$dir/dist/"* "dist/$dir/"
+            else
+              echo "No build script found. Copying source files..."
+              rsync -av --exclude='node_modules' --exclude='.git' --exclude='package-lock.json' --exclude='pyproject.toml' --exclude='AGENTS.md' "$dir/" "dist/$dir/"
+            fi
+          done
+          cp README.md dist/ || true
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: artifacts
+          directory: dist
