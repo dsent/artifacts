@@ -4,7 +4,7 @@ This repository hosts multiple small artifacts (games, tools, experiments) with 
 
 ## Repository Structure
 
-- `/<artifact-name>/` - Individual artifact directories.
+- `/artifacts/<artifact-name>/` - Individual artifact directories.
 - `.github/workflows/` - Deployment and CI workflows.
 - `.github/instructions/` - Language-specific Copilot instructions.
 - `docs/` - Repository documentation and setup guides.
@@ -25,6 +25,7 @@ Each artifact should follow these conventions to ensure compatibility with the m
    - Build output must be placed in a `dist/` directory within the artifact folder.
    - If no build step is present, the deployment workflow will copy the artifact's source files to the global `dist/` directory.
 4. **Dependencies:** Use `package.json` for Node.js/JS and `pyproject.toml` (with `uv`) for Python.
+5. **Licensing:** Each artifact should include its own `LICENSE` file. The root `LICENSE` applies only to monorepo infrastructure and build scripts.
 
 ## Coding Standards
 
@@ -51,3 +52,7 @@ Each artifact should follow these conventions to ensure compatibility with the m
 - Refer to `.github/copilot-instructions.md` for GitHub Copilot specific settings.
 - Refer to `.github/instructions/*.instructions.md` for language-specific rules.
 - Artifact-level `AGENTS.md` files should be the primary source of truth for project-specific logic.
+
+## Development Workflow
+
+In VS Code on Windows, make sure to use integrated PowerShell. No need to invoke `pwsh`, just run PowerShell 7.5 commands directly in the terminal.

@@ -6,7 +6,7 @@ Browser-based survival game: dodge AI-controlled falling Tetromino blocks, climb
 
 - **Purpose:** Arcade survival game combining block-stacking mechanics with platformer gameplay.
 - **Tech Stack:** Vanilla JavaScript (ES6+), HTML5 Canvas, CSS3; Node.js for headless simulations.
-- **Reference:** See root [AGENTS.md](../AGENTS.md) for general repository rules.
+- **Reference:** See root [AGENTS.md](../../AGENTS.md) for general repository rules.
 
 ## Repo Structure
 
@@ -39,4 +39,4 @@ Browser-based survival game: dodge AI-controlled falling Tetromino blocks, climb
 
 - **Testing:** Manual browser testing + headless simulations for AI/engine changes.
 - **Build:** Currently no build step. Deployment workflow copies source to `dist/`.
-- **JS Standards:** Refer to [.github/instructions/javascript.instructions.md](../.github/instructions/javascript.instructions.md).
+- **JS Standards:** Refer to [.github/instructions/javascript.instructions.md](../../.github/instructions/javascript.instructions.md).

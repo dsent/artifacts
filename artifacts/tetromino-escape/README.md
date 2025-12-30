@@ -1,21 +1,25 @@
 # Tetromino Escape
 
+Part of the [Artifacts Monorepo](../../README.md).
+
 **Tetromino Escape** is a browser-based game that combines classic block-stacking mechanics with platformer survival. You play as a tiny character trapped inside a Tetromino well. An AI controls the falling blocks, and your goal is to dodge them, climb the debris, and survive as long as possible.
 
 ## 🎮 How to Play
 
 Due to ES module CORS restrictions, you need to serve the game via HTTP. You can:
 
-**Option 1: Use Python's built-in server**
+### Option 1: Use Python's built-in server
+
 ```bash
 python3 -m http.server 8080
-# Then open http://localhost:8080/tetromino-escape.html in your browser
+# Then open http://localhost:8080/index.html in your browser
 ```
 
-**Option 2: Use Node.js http-server**
+### Option 2: Use Node.js http-server
+
 ```bash
 npx http-server -p 8080
-# Then open http://localhost:8080/tetromino-escape.html in your browser
+# Then open http://localhost:8080/index.html in your browser
 ```
 
 **Option 3: Use any other local web server** (VS Code Live Server, etc.)
@@ -72,7 +76,7 @@ The simulation outputs statistics such as:
 
 The project uses **ES modules** for better code organization and static analysis:
 
-- `tetromino-escape.html`: Main entry point for the game.
+- `index.html`: Main entry point for the game.
 - `package.json`: Node.js configuration with ES module support.
 - `js/constants.js`: Exports game constants, difficulty settings, and Tetromino definitions.
 - `js/utils.js`: Exports utility functions for shape handling.
