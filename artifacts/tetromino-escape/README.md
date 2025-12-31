@@ -31,6 +31,7 @@ npx http-server -p 8080
 - **Arrow Up / W / Space**: Jump
 - **S**: Trigger Sabotage (if available)
 - **P / Esc**: Pause Game
+- **F9**: Dump Game State (Debug)
 
 ### Objective
 
@@ -71,6 +72,26 @@ The simulation outputs statistics such as:
 - Average lines cleared
 - Average max height reached
 - Average game duration
+
+### State Dumping & Analysis
+
+For debugging specific AI decisions or game states, you can "dump" the current state of the game:
+
+1.  Press **F9** while playing or paused.
+2.  The game state (JSON) will be logged to the browser console and copied to your clipboard.
+3.  Save this JSON to a file (e.g., `debug/state.json`).
+4.  Use `simulate.js` to analyze the state:
+
+```bash
+# Analyze AI decision for a specific state
+node simulate.js --state debug/state.json
+
+# Step through AI moves from that state
+node simulate.js --state debug/state.json --step 5
+
+# Enable verbose AI logging
+node simulate.js --state debug/state.json --verbose
+```
 
 ## 📂 Project Structure
 

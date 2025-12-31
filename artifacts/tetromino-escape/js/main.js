@@ -39,6 +39,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Connect Input Handler
   inputHandler.onPause = togglePause;
   inputHandler.onSabotage = () => game.triggerSabotage();
+  
+  // Debug: Dump state to console and clipboard for use with simulate.js
   inputHandler.onDumpState = () => {
     if (game.status === "playing" || game.status === "paused") {
       const state = game.dumpState();

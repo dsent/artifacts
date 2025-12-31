@@ -7,6 +7,8 @@
  *   node simulate.js --state <file.json>      - Load state and analyze AI decision
  *   node simulate.js --state <file.json> --step [n]  - Step through n AI moves
  *
+ * Note: You can generate state JSON files by pressing F9 in the browser game.
+ *
  * Examples:
  *   node simulate.js easy 100
  *   node simulate.js --player hard 50
