@@ -921,7 +921,7 @@ export class GameEngine {
 
   applySabotageToCurrent() {
     this.timers.sabotage = this.settings.diffConfig.sabotageDuration * 1000;
-    this.ai.calculateTarget(DIFFICULTY_SETTINGS.easy);
+    this.ai.calculateTarget(DIFFICULTY_SETTINGS.sabotage, true); // Use sabotage config, with player avoidance enabled (but inverted)
 
     let dropDist = this.getDropDistance();
     if (dropDist > 8) {

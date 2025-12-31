@@ -254,6 +254,33 @@ export const DIFFICULTY_SETTINGS = {
     sabotageDuration: 2.0,
     sabotageCooldown: 8.0,
   },
+  // Sabotage: NOT user-selectable, only used when sabotaging
+  // This difficulty actively tries to make the player's life harder by:
+  // - Building up debris (positive rewards for holes, height, bumpiness)
+  // - Heavily penalizing line clears
+  // - Actively targeting the player's danger zone
+  sabotage: {
+    // Line clearing: HEAVILY penalize clearing lines
+    lineReward: -500,
+    multiLineBonus: false,
+    // Holes
+    holeReward: 10, // REWARD creating holes
+    coveredHoleReward: 10, // REWARD covered holes (makes it harder to clear)
+    // Height: REWARD building high (opposite of normal behavior)
+    heightReward: 2,
+    maxHeightReward: 5,
+    // Bumpiness: REWARD uneven terrain (makes it harder for player)
+    bumpinessReward: 10,
+    // Terrain traversability (funnel-based)
+    // Penalty for >=4 height cliffs in valid funnel pattern (scaled by distance from edge)
+    funnelPenaltyBase: -30,
+    // Prohibitive penalty for cliffs that split the field (break funnel pattern)
+    splitPenalty: -1000,
+    // Avoiding player
+    dangerZoneMargin: 0.75,
+    dangerZoneReward: -500,
+    dangerZoneDecay: 1.0, // Never decays - always avoids player
+  },
 };
 
 /**
