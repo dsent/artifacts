@@ -110,11 +110,11 @@ export class InputHandler {
 
       elements.joystick.addEventListener('touchend', (e) => {
         e.preventDefault();
-        // Check if our tracked touch ended
-        let touchEnded = true;
-        for (let touch of e.touches) {
+        // Check if our tracked touch ended by looking at changedTouches
+        let touchEnded = false;
+        for (let touch of e.changedTouches) {
           if (touch.identifier === this.activeTouch) {
-            touchEnded = false;
+            touchEnded = true;
             break;
           }
         }
