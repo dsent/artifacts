@@ -78,7 +78,7 @@ The project uses **ES modules** for better code organization and static analysis
 
 - `index.html`: Main entry point for the game.
 - `package.json`: Node.js configuration with ES module support.
-- `js/constants.js`: Exports game constants, difficulty settings, and Tetromino definitions.
+- `js/config.js`: Exports game constants, difficulty settings, and Tetromino definitions. Handles layered configuration loading.
 - `js/utils.js`: Exports utility functions for shape handling.
 - `js/input.js`: Exports InputHandler class for keyboard input.
 - `js/renderer.js`: Exports GameRenderer class for Canvas 2D rendering.

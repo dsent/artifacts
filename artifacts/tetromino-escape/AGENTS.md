@@ -12,7 +12,7 @@ Browser-based survival game: dodge AI-controlled falling Tetromino blocks, climb
 ## Repo Structure
 
 - `/js/` - Game modules (ES modules with named exports)
-  - `constants.js` - Exports `DEFAULT_CONSTANTS`, `TETROMINOES`, and `DIFFICULTY_SETTINGS`.
+  - `config.js` - Exports `DEFAULT_CONSTANTS`, `TETROMINOES`, and `DIFFICULTY_SETTINGS`. Handles layered configuration loading.
   - `utils.js` - Exports `getShape` and `getRandomTetrominoType` utility functions.
   - `input.js` - Exports `InputHandler` class.
   - `renderer.js` - Exports `GameRenderer` class.
@@ -32,7 +32,7 @@ Browser-based survival game: dodge AI-controlled falling Tetromino blocks, climb
 ## Game Rules & Logic
 
 - **Grid:** 10 cols × 20 rows; `CELL_SIZE` derived from canvas height.
-- **Difficulty:** Settings in `constants.js` control AI behavior (targeting, speed, etc.).
+- **Difficulty:** Settings in `config.js` control AI behavior (targeting, speed, etc.).
 - **AI:** Uses BFS pathfinding with weighted scoring (holes, height, wells, cliffs, player avoidance).
 - **Player Physics:** Gravity, jump force, terminal velocity defined in `DEFAULT_CONSTANTS`.
 

@@ -15,3 +15,5 @@ Simple prioritized list. No detailed plans.
 - Add background music.
 - Add mobile support (touch controls, responsive layout).
 - Add Christmas theme (snow falling from Dec 20 to Jan 10).
+
+## Completed

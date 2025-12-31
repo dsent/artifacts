@@ -1,4 +1,4 @@
-import { DEFAULT_CONSTANTS, TETROMINOES, DIFFICULTY_SETTINGS } from './constants.js';
+import { DEFAULT_CONSTANTS, TETROMINOES, DIFFICULTY_SETTINGS } from './config.js';
 import { getShape, getRandomTetrominoType } from './utils.js';
 import { AIController } from './ai.js';
 

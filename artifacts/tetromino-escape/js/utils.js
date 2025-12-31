@@ -1,4 +1,4 @@
-import { TETROMINOES } from './constants.js';
+import { TETROMINOES } from './config.js';
 
 /**
  * Helper Functions

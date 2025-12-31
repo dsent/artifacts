@@ -1,3 +1,10 @@
+/**
+ * Game Configuration and Constants
+ *
+ * This file contains all game constants and handles layered configuration loading.
+ * Priority: URL Parameters > config.json > Hostname Detection > Defaults
+ */
+
 export const DEFAULT_CONSTANTS = {
   COLS: 10,
   ROWS: 20,
@@ -7,31 +14,31 @@ export const DEFAULT_CONSTANTS = {
   TERMINAL_VELOCITY: 15,
   SPAWN_DELAY: 0.3, // seconds
   LINE_HISTORY_WINDOW: 10,
-  DEBUG_AI: true, // Show AI target and score
-  
+  DEBUG_AI: false, // Default to false, resolved in loadConfig()
+
   // Player dimensions as ratio of cell size
   PLAYER_WIDTH_RATIO: 0.7,
   PLAYER_HEIGHT_RATIO: 1.5,
-  
+
   // Physics thresholds
   MAX_CLIMBABLE_HEIGHT: 3, // Max rows player can jump up
   CLIFF_HEIGHT_THRESHOLD: 4, // Height difference that creates a cliff
   PIECE_LANDING_TOLERANCE: 4, // Pixels tolerance for landing on piece
   HORIZONTAL_OVERLAP_THRESHOLD: 0.5, // Ratio for horizontal push decision
-  
+
   // AI Decision Constants
   AI_RETARGET_DISTANCE: 4, // Rows from landing before stopping retargets
   AI_FAST_DROP_HEIGHT: 6, // Minimum height for fast drop check
   AI_PANIC_HEIGHT: 2, // Rows from top that triggers panic mode
   AI_WARNING_HEIGHT: 4, // Rows from top for warning state
   AI_MAX_BFS_ITERATIONS: 4000, // Safety limit for pathfinding
-  
+
   // Visual/Particle Constants
   PARTICLES_PER_BLOCK: 6,
   PARTICLE_LIFETIME: 1, // seconds
   PARTICLE_DECAY_RATE: 2, // life reduction per second
   PARTICLE_VELOCITY_RANGE: 8, // max velocity in any direction
-  
+
   // Ground Check Constants
   GROUND_CHECK_WIDTH_RATIO: 0.5, // Center portion of player to check for ground
   GROUND_CHECK_DISTANCE: 1, // Pixels below player to check
@@ -248,3 +255,47 @@ export const DIFFICULTY_SETTINGS = {
     sabotageCooldown: 8.0,
   },
 };
+
+/**
+ * Loads configuration from multiple sources and merges them into DEFAULT_CONSTANTS.
+ * Priority: URL Parameters > config.json > Hostname Detection > Defaults
+ */
+export async function loadConfig() {
+  // 1. Hostname-based default
+  let debugAI = false;
+  if (typeof window !== "undefined") {
+    debugAI = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  }
+
+  // 2. config.json (can be injected by build/deploy scripts)
+  try {
+    // Only attempt fetch if it's available (browser or Node 18+)
+    if (typeof fetch !== "undefined") {
+      const response = await fetch("./config.json");
+      if (response.ok) {
+        const fileConfig = await response.json();
+
+        // Merge all file-based overrides into DEFAULT_CONSTANTS
+        Object.assign(DEFAULT_CONSTANTS, fileConfig);
+
+        // If DEBUG_AI was explicitly set in config.json, it takes precedence over hostname
+        if (fileConfig.DEBUG_AI !== undefined) {
+          debugAI = fileConfig.DEBUG_AI;
+        }
+      }
+    }
+  } catch (e) {
+    // Silent fail if config.json is missing or invalid
+  }
+
+  // 3. URL parameter override (highest priority for manual debugging)
+  if (typeof window !== "undefined") {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("debug_ai")) {
+      debugAI = urlParams.get("debug_ai") === "true";
+    }
+  }
+
+  // Final assignment to the exported constant object
+  DEFAULT_CONSTANTS.DEBUG_AI = debugAI;
+}

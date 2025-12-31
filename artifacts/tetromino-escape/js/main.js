@@ -1,8 +1,11 @@
 import { GameEngine } from './engine.js';
 import { GameRenderer } from './renderer.js';
 import { InputHandler } from './input.js';
+import { loadConfig } from './config.js';
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadConfig();
+
   const CANVAS = document.getElementById("gameCanvas");
   if (!CANVAS) {
     console.error("Canvas element not found. Please ensure the HTML contains an element with id 'gameCanvas'.");

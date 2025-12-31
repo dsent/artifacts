@@ -64,6 +64,11 @@ jobs:
       - name: Generate Index
         run: python scripts/generate_index.py
 
+      - name: Inject Preview Configs
+        run: |
+          echo "Injecting debug config for tetromino-escape"
+          echo '{"DEBUG_AI": true}' > dist/tetromino-escape/config.json
+
       - name: Debug Dist
         run: |
           echo "Listing dist directory:"
