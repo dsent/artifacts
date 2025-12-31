@@ -4,6 +4,10 @@ export class InputHandler {
     this.onPause = () => {};
     this.onSabotage = () => {};
     this.onDumpState = () => {};
+    
+    // Touch state
+    this.touchElements = null;
+    this.activeTouch = null; // Track active touch on joystick
 
     window.addEventListener("keydown", (e) => this.handleKeyDown(e));
     window.addEventListener("keyup", (e) => this.handleKeyUp(e));
@@ -40,5 +44,138 @@ export class InputHandler {
 
   handleBlur() {
     this.keys = {};
+  }
+
+  // Initialize touch controls with DOM elements
+  initTouchControls(elements) {
+    this.touchElements = elements;
+
+    // Jump button
+    if (elements.jumpBtn) {
+      elements.jumpBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        this.keys.ArrowUp = true;
+        this.keys.Space = true;
+        elements.jumpBtn.classList.add('active');
+      });
+
+      elements.jumpBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        this.keys.ArrowUp = false;
+        this.keys.Space = false;
+        elements.jumpBtn.classList.remove('active');
+      });
+    }
+
+    // Sabotage button
+    if (elements.sabotageBtn) {
+      elements.sabotageBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        this.onSabotage();
+        elements.sabotageBtn.classList.add('active');
+      });
+
+      elements.sabotageBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        elements.sabotageBtn.classList.remove('active');
+      });
+    }
+
+    // Pause button
+    if (elements.pauseBtn) {
+      elements.pauseBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        this.onPause();
+      });
+    }
+
+    // Joystick (Right Touch Zone)
+    if (elements.joystick) {
+      elements.joystick.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        this.activeTouch = touch.identifier;
+        this.updateJoystick(touch, elements.joystick);
+      });
+
+      elements.joystick.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        for (let touch of e.touches) {
+          if (touch.identifier === this.activeTouch) {
+            this.updateJoystick(touch, elements.joystick);
+            break;
+          }
+        }
+      });
+
+      elements.joystick.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        // Check if our tracked touch ended
+        let touchEnded = true;
+        for (let touch of e.touches) {
+          if (touch.identifier === this.activeTouch) {
+            touchEnded = false;
+            break;
+          }
+        }
+        
+        if (touchEnded) {
+          this.activeTouch = null;
+          this.keys.ArrowLeft = false;
+          this.keys.ArrowRight = false;
+          elements.joystick.classList.remove('active-left', 'active-right');
+          if (elements.indicator) {
+            elements.indicator.style.display = 'none';
+          }
+        }
+      });
+
+      elements.joystick.addEventListener('touchcancel', (e) => {
+        e.preventDefault();
+        this.activeTouch = null;
+        this.keys.ArrowLeft = false;
+        this.keys.ArrowRight = false;
+        elements.joystick.classList.remove('active-left', 'active-right');
+        if (elements.indicator) {
+          elements.indicator.style.display = 'none';
+        }
+      });
+    }
+  }
+
+  // Update joystick state based on touch position
+  updateJoystick(touch, joystickElement) {
+    const rect = joystickElement.getBoundingClientRect();
+    const relativeX = touch.clientX - rect.left;
+    const width = rect.width;
+    
+    // Split into thirds (discrete zones)
+    const third = width / 3;
+    
+    // Update indicator position
+    if (this.touchElements.indicator) {
+      this.touchElements.indicator.style.display = 'block';
+      this.touchElements.indicator.style.left = `${relativeX}px`;
+    }
+    
+    // Determine which zone we're in
+    if (relativeX < third) {
+      // Left zone
+      this.keys.ArrowLeft = true;
+      this.keys.ArrowRight = false;
+      joystickElement.classList.add('active-left');
+      joystickElement.classList.remove('active-right');
+    } else if (relativeX > 2 * third) {
+      // Right zone
+      this.keys.ArrowLeft = false;
+      this.keys.ArrowRight = true;
+      joystickElement.classList.add('active-right');
+      joystickElement.classList.remove('active-left');
+    } else {
+      // Center zone (neutral)
+      this.keys.ArrowLeft = false;
+      this.keys.ArrowRight = false;
+      joystickElement.classList.remove('active-left', 'active-right');
+    }
   }
 }

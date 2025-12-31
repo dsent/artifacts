@@ -4,8 +4,6 @@ Simple prioritized list. No detailed plans.
 
 ## P0
 
-- Add mobile support (touch controls, responsive layout).
-
 ## P1
 
 - Add sound effects.
@@ -13,6 +11,7 @@ Simple prioritized list. No detailed plans.
 
 ## Completed
 
+- 2025-12-31 (done): Add mobile support (touch controls, responsive layout).
 - 2025-12-31 (done): Add Christmas theme (snow falling from Dec 20 to Jan 10).
 - 2025-12-31 (done): Fix starting screen/pause layout (it's ugly now).
 - 2025-12-31 (done): Rendering updates: get rid of hardcoded colors, visually indicate sabotaged pieces.

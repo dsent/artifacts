@@ -65,6 +65,21 @@
           <h1>PAUSED</h1>
           <p>Game paused</p>
 
+          <div class="mobile-stats">
+            <div class="mobile-stat">
+              <span class="mobile-stat-label">Height:</span>
+              <span class="mobile-stat-value" id="pauseHeight">0%</span>
+            </div>
+            <div class="mobile-stat">
+              <span class="mobile-stat-label">Time:</span>
+              <span class="mobile-stat-value" id="pauseTime">0s</span>
+            </div>
+            <div class="mobile-stat">
+              <span class="mobile-stat-label">Lines:</span>
+              <span class="mobile-stat-value" id="pauseLines">0</span>
+            </div>
+          </div>
+
           <div class="difficulty-selector">
             <label>Difficulty:</label>
             <div class="difficulty-buttons">
@@ -95,6 +110,7 @@
           <div class="game-over-stats">
             <p>Height Reached: <span id="finalHeight">0</span>%</p>
             <p>Time Survived: <span id="finalTime">0</span>s</p>
+            <p>Lines Cleared: <span id="finalLines">0</span></p>
           </div>
           <button class="btn" id="try-again-btn">TRY AGAIN</button>
         </div>
@@ -135,6 +151,31 @@
           <div class="stat-label">Sabotage</div>
           <div class="stat-value"><span id="sabotage">READY</span></div>
         </div>
+      </div>
+    </div>
+
+    <!-- Mobile Touch Controls -->
+    <div id="touchControls" class="touch-controls hidden">
+      <!-- Pause Button (Top Right) -->
+      <button id="touchPauseBtn" class="touch-pause-btn">⏸</button>
+
+      <!-- Left Touch Zone (Jump + Sabotage) -->
+      <div class="touch-zone touch-zone-left">
+        <button id="touchSabotageBtn" class="touch-btn touch-sabotage-btn">
+          <span class="sabotage-label">S</span>
+          <div class="sabotage-cooldown-bar"></div>
+        </button>
+        <button id="touchJumpBtn" class="touch-btn touch-jump-btn">↑</button>
+      </div>
+
+      <!-- Right Touch Zone (Joystick) -->
+      <div class="touch-zone touch-zone-right" id="touchJoystick">
+        <div class="joystick-track">
+          <div class="joystick-zone joystick-left">L</div>
+          <div class="joystick-zone joystick-center"></div>
+          <div class="joystick-zone joystick-right">R</div>
+        </div>
+        <div class="joystick-indicator"></div>
       </div>
     </div>
 

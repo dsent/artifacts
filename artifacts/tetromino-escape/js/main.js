@@ -99,6 +99,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   const snowCanvas = document.getElementById("snowCanvas");
   const snowEffect = snowCanvas ? new SnowEffect(snowCanvas) : null;
 
+  // Mobile/Touch detection and setup
+  const isMobile =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
+
+  const touchControls = document.getElementById("touchControls");
+  if (isMobile && touchControls) {
+    touchControls.classList.remove("hidden");
+    // Initially hide touch controls (will show when game starts)
+    touchControls.style.visibility = 'hidden';
+
+    // Initialize touch controls in input handler
+    inputHandler.initTouchControls({
+      jumpBtn: document.getElementById("touchJumpBtn"),
+      sabotageBtn: document.getElementById("touchSabotageBtn"),
+      pauseBtn: document.getElementById("touchPauseBtn"),
+      joystick: document.getElementById("touchJoystick"),
+      indicator: document.querySelector(".joystick-indicator"),
+    });
+  }
+
   // Start with snow active (on start screen)
   if (snowEffect) {
     snowEffect.setActive(true);
@@ -112,6 +133,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("deathReason").textContent = reason;
       document.getElementById("finalHeight").textContent = Math.floor((1 - game.player.y / CANVAS.height) * 100);
       document.getElementById("finalTime").textContent = Math.floor(game.stats.time);
+      document.getElementById("finalLines").textContent = game.stats.linesCleared;
       document.getElementById("gameOverOverlay").classList.remove("hidden");
       CANVAS.classList.add("death-animation");
       setTimeout(() => CANVAS.classList.remove("death-animation"), 500);
@@ -128,7 +150,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Connect Input Handler
   inputHandler.onPause = togglePause;
   inputHandler.onSabotage = () => game.triggerSabotage();
-  
+
   // Debug: Dump state to console and clipboard for use with simulate.js
   inputHandler.onDumpState = () => {
     if (game.status === "playing" || game.status === "paused") {
@@ -146,6 +168,57 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
+  // Responsive canvas sizing (after game is initialized)
+  function resizeCanvas() {
+    if (isMobile) {
+      // Calculate available space (accounting for touch controls at bottom)
+      const touchControlHeight = Math.max(window.innerHeight * 0.2, 100);
+      const availableHeight = window.innerHeight - touchControlHeight - 60; // 60px for pause button
+      const availableWidth = window.innerWidth - 20; // Small margin
+
+      // Maintain 10:20 aspect ratio (width:height = 1:2)
+      const aspectRatio = 1 / 2;
+      let newWidth, newHeight;
+
+      if (availableWidth / availableHeight > aspectRatio) {
+        // Height is the limiting factor
+        newHeight = Math.min(availableHeight, window.innerHeight * 0.7);
+        newWidth = newHeight * aspectRatio;
+      } else {
+        // Width is the limiting factor
+        newWidth = Math.min(availableWidth, window.innerWidth * 0.9);
+        newHeight = newWidth / aspectRatio;
+      }
+
+      CANVAS.width = newWidth;
+      CANVAS.height = newHeight;
+
+      // Also set CSS dimensions explicitly for proper display
+      CANVAS.style.width = newWidth + "px";
+      CANVAS.style.height = newHeight + "px";
+
+      // Update renderer and game engine with new dimensions
+      renderer.width = newWidth;
+      renderer.height = newHeight;
+      game.width = newWidth;
+      game.height = newHeight;
+      // Recalculate constants based on new dimensions
+      game.constants.CELL_SIZE = newHeight / game.constants.ROWS;
+      game.constants.PLAYER_WIDTH = game.constants.CELL_SIZE * game.constants.PLAYER_WIDTH_RATIO;
+      game.constants.PLAYER_HEIGHT = game.constants.CELL_SIZE * game.constants.PLAYER_HEIGHT_RATIO;
+    }
+  }
+
+  // Handle window resize
+  if (isMobile) {
+    window.addEventListener("resize", resizeCanvas);
+    window.addEventListener("orientationchange", () => {
+      setTimeout(resizeCanvas, 100); // Delay to ensure viewport has updated
+    });
+    // Initial resize
+    resizeCanvas();
+  }
+
   // --- UI FUNCTIONS ---
 
   function updateUI() {
@@ -155,6 +228,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("time").textContent = Math.floor(game.stats.time);
     document.getElementById("lines").textContent = game.stats.linesCleared;
 
+    // Update sabotage UI (desktop)
     const sabEl = document.getElementById("sabotage");
     if (sabEl) {
       if (game.timers.sabotageCooldown > 0) {
@@ -165,6 +239,35 @@ document.addEventListener("DOMContentLoaded", async () => {
         sabEl.style.color = "#4ecca3";
       }
     }
+
+    // Update mobile touch sabotage button
+    const touchSabotageBtn = document.getElementById("touchSabotageBtn");
+    if (touchSabotageBtn) {
+      const cooldownBar = touchSabotageBtn.querySelector(".sabotage-cooldown-bar");
+      if (game.timers.sabotageCooldown > 0) {
+        const cooldownDuration = game.constants.SABOTAGE_COOLDOWN || 3000;
+        const percentage = (game.timers.sabotageCooldown / cooldownDuration) * 100;
+        if (cooldownBar) {
+          cooldownBar.style.width = `${percentage}%`;
+        }
+        touchSabotageBtn.classList.remove("ready");
+        touchSabotageBtn.classList.add("disabled");
+      } else {
+        if (cooldownBar) {
+          cooldownBar.style.width = "0%";
+        }
+        touchSabotageBtn.classList.remove("disabled");
+        touchSabotageBtn.classList.add("ready");
+      }
+    }
+
+    // Update pause overlay stats (for mobile)
+    const pauseHeight = document.getElementById("pauseHeight");
+    const pauseTime = document.getElementById("pauseTime");
+    const pauseLines = document.getElementById("pauseLines");
+    if (pauseHeight) pauseHeight.textContent = hPct + "%";
+    if (pauseTime) pauseTime.textContent = Math.floor(game.stats.time) + "s";
+    if (pauseLines) pauseLines.textContent = game.stats.linesCleared;
   }
 
   // --- CONTROL FUNCTIONS ---
@@ -174,6 +277,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     ["startOverlay", "pauseOverlay", "gameOverOverlay", "winOverlay"].forEach((id) =>
       document.getElementById(id).classList.add("hidden")
     );
+    // Show touch controls when playing
+    if (touchControls && isMobile) {
+      touchControls.style.visibility = 'visible';
+    }
     // Deactivate snow when playing
     if (snowEffect) {
       snowEffect.setActive(false);
@@ -184,6 +291,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (game.status === "playing") {
       game.status = "paused";
       document.getElementById("pauseOverlay").classList.remove("hidden");
+      // Hide touch controls when paused
+      if (touchControls && isMobile) {
+        touchControls.style.visibility = 'hidden';
+      }
       // Activate snow when paused
       if (snowEffect) {
         snowEffect.setActive(true);
@@ -195,6 +306,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (game.status === "paused") {
       game.status = "playing";
       document.getElementById("pauseOverlay").classList.add("hidden");
+      // Show touch controls when resuming
+      if (touchControls && isMobile) {
+        touchControls.style.visibility = 'visible';
+      }
       // Deactivate snow when resuming
       if (snowEffect) {
         snowEffect.setActive(false);
