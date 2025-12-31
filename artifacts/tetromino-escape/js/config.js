@@ -72,6 +72,11 @@ export const DEFAULT_CONSTANTS = {
   // Ground Check Constants
   GROUND_CHECK_WIDTH_RATIO: 0.5, // Center portion of player to check for ground
   GROUND_CHECK_DISTANCE: 1, // Pixels below player to check
+
+  // Christmas Theme Colors
+  CHRISTMAS_SNOW_COLOR: 'rgba(255, 255, 255, 0.8)',
+  CHRISTMAS_HAT_RED: '#c41e3a',
+  CHRISTMAS_HAT_WHITE: '#ffffff',
 };
 
 export const TETROMINOES = {

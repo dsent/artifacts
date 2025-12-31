@@ -5,63 +5,6 @@ export class GameRenderer {
   constructor(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
-
-    // Initialize snow particles for Christmas theme
-    this.snowflakes = [];
-    this.initSnowflakes();
-  }
-
-  initSnowflakes() {
-    if (!isChristmasTheme()) return;
-
-    // Create 50 snowflakes
-    for (let i = 0; i < 50; i++) {
-      this.snowflakes.push({
-        x: Math.random() * this.canvas.width,
-        y: Math.random() * this.canvas.height,
-        radius: Math.random() * 2 + 1,
-        speed: Math.random() * 0.5 + 0.3,
-        drift: Math.random() * 0.5 - 0.25,
-      });
-    }
-  }
-
-  updateSnowflakes() {
-    if (!isChristmasTheme()) return;
-
-    this.snowflakes.forEach(flake => {
-      flake.y += flake.speed;
-      flake.x += flake.drift;
-
-      // Reset snowflake to top when it goes off screen
-      if (flake.y > this.canvas.height) {
-        flake.y = -10;
-        flake.x = Math.random() * this.canvas.width;
-      }
-
-      // Wrap horizontally
-      if (flake.x > this.canvas.width) {
-        flake.x = 0;
-      } else if (flake.x < 0) {
-        flake.x = this.canvas.width;
-      }
-    });
-  }
-
-  drawSnowflakes() {
-    if (!isChristmasTheme()) return;
-
-    const { ctx } = this;
-    ctx.save();
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-
-    this.snowflakes.forEach(flake => {
-      ctx.beginPath();
-      ctx.arc(flake.x, flake.y, flake.radius, 0, Math.PI * 2);
-      ctx.fill();
-    });
-
-    ctx.restore();
   }
 
   draw(game) {
@@ -84,10 +27,6 @@ export class GameRenderer {
       this.drawDebugOverlay(game);
       this.drawPlayer(game);
       this.drawParticles(game);
-
-      // Update and draw snowflakes (Christmas theme)
-      this.updateSnowflakes();
-      this.drawSnowflakes();
 
       ctx.restore();
     }
@@ -249,24 +188,24 @@ export class GameRenderer {
 
     // Draw Santa hat (Christmas theme)
     if (isChristmasTheme()) {
-      this.drawSantaHat(p.x + w / 2, p.y + h * 0.18, w * 0.38);
+      this.drawSantaHat(p.x + w / 2, p.y + h * 0.18, w * 0.38, game);
     }
 
     ctx.globalAlpha = 1;
   }
 
-  drawSantaHat(centerX, centerY, headRadius) {
+  drawSantaHat(centerX, centerY, headRadius, game) {
     const { ctx } = this;
     ctx.save();
 
     // Hat base (white trim)
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = game.constants.CHRISTMAS_HAT_WHITE;
     ctx.beginPath();
     ctx.ellipse(centerX, centerY - headRadius * 0.6, headRadius * 1.1, headRadius * 0.25, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // Hat body (red triangle)
-    ctx.fillStyle = '#c41e3a';
+    ctx.fillStyle = game.constants.CHRISTMAS_HAT_RED;
     ctx.beginPath();
     ctx.moveTo(centerX - headRadius * 0.8, centerY - headRadius * 0.6);
     ctx.lineTo(centerX + headRadius * 0.8, centerY - headRadius * 0.6);
@@ -275,7 +214,7 @@ export class GameRenderer {
     ctx.fill();
 
     // Hat tip (white pom-pom)
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = game.constants.CHRISTMAS_HAT_WHITE;
     ctx.beginPath();
     ctx.arc(centerX + headRadius * 0.3, centerY - headRadius * 1.8, headRadius * 0.3, 0, Math.PI * 2);
     ctx.fill();

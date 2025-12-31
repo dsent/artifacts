@@ -1,7 +1,87 @@
 import { GameEngine } from './engine.js';
 import { GameRenderer } from './renderer.js';
 import { InputHandler } from './input.js';
-import { loadConfig, DIFFICULTY_SETTINGS } from './config.js';
+import { loadConfig, DIFFICULTY_SETTINGS, DEFAULT_CONSTANTS } from './config.js';
+import { isChristmasTheme } from './utils.js';
+
+// Christmas snow effect manager
+class SnowEffect {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.snowflakes = [];
+    this.active = false;
+
+    if (isChristmasTheme()) {
+      this.init();
+    }
+  }
+
+  init() {
+    // Set canvas to full viewport size
+    this.canvas.width = window.innerWidth;
+    this.canvas.height = window.innerHeight;
+
+    // Create snowflakes
+    for (let i = 0; i < 100; i++) {
+      this.snowflakes.push({
+        x: Math.random() * this.canvas.width,
+        y: Math.random() * this.canvas.height,
+        radius: Math.random() * 2.5 + 1,
+        speed: Math.random() * 0.8 + 0.4,
+        drift: Math.random() * 0.6 - 0.3,
+      });
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      this.canvas.width = window.innerWidth;
+      this.canvas.height = window.innerHeight;
+    });
+  }
+
+  setActive(active) {
+    this.active = active && isChristmasTheme();
+  }
+
+  update() {
+    if (!this.active || !isChristmasTheme()) return;
+
+    this.snowflakes.forEach(flake => {
+      flake.y += flake.speed;
+      flake.x += flake.drift;
+
+      // Reset to top when off screen
+      if (flake.y > this.canvas.height) {
+        flake.y = -10;
+        flake.x = Math.random() * this.canvas.width;
+      }
+
+      // Wrap horizontally
+      if (flake.x > this.canvas.width) {
+        flake.x = 0;
+      } else if (flake.x < 0) {
+        flake.x = this.canvas.width;
+      }
+    });
+  }
+
+  draw() {
+    if (!this.active || !isChristmasTheme()) {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      return;
+    }
+
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.fillStyle = DEFAULT_CONSTANTS.CHRISTMAS_SNOW_COLOR;
+
+    this.snowflakes.forEach(flake => {
+      this.ctx.beginPath();
+      this.ctx.arc(flake.x, flake.y, flake.radius, 0, Math.PI * 2);
+      this.ctx.fill();
+    });
+  }
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
   await loadConfig();
@@ -14,6 +94,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const renderer = new GameRenderer(CANVAS);
   const inputHandler = new InputHandler();
+
+  // Initialize snow effect
+  const snowCanvas = document.getElementById("snowCanvas");
+  const snowEffect = snowCanvas ? new SnowEffect(snowCanvas) : null;
+
+  // Start with snow active (on start screen)
+  if (snowEffect) {
+    snowEffect.setActive(true);
+  }
 
   // Instantiate the engine
   const game = new GameEngine({
@@ -85,12 +174,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     ["startOverlay", "pauseOverlay", "gameOverOverlay", "winOverlay"].forEach((id) =>
       document.getElementById(id).classList.add("hidden")
     );
+    // Deactivate snow when playing
+    if (snowEffect) {
+      snowEffect.setActive(false);
+    }
   }
 
   function pauseGame() {
     if (game.status === "playing") {
       game.status = "paused";
       document.getElementById("pauseOverlay").classList.remove("hidden");
+      // Activate snow when paused
+      if (snowEffect) {
+        snowEffect.setActive(true);
+      }
     }
   }
 
@@ -98,6 +195,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (game.status === "paused") {
       game.status = "playing";
       document.getElementById("pauseOverlay").classList.add("hidden");
+      // Deactivate snow when resuming
+      if (snowEffect) {
+        snowEffect.setActive(false);
+      }
       // Reset lastTime to prevent huge dt jump
       lastTime = performance.now();
     }
@@ -179,6 +280,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     game.update(dt, inputHandler);
     updateUI();
     renderer.draw(game);
+
+    // Update and draw snow effect
+    if (snowEffect) {
+      snowEffect.update();
+      snowEffect.draw();
+    }
 
     requestAnimationFrame(gameLoop);
   }
