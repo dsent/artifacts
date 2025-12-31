@@ -171,10 +171,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Responsive canvas sizing (after game is initialized)
   function resizeCanvas() {
     if (isMobile) {
-      // Calculate available space (accounting for touch controls at bottom)
-      const touchControlHeight = Math.max(window.innerHeight * 0.2, 100);
-      const availableHeight = window.innerHeight - touchControlHeight - 60; // 60px for pause button
-      const availableWidth = window.innerWidth - 20; // Small margin
+      // Touch control dimensions - balanced with top margin for equal spacing
+      const touchControlHeight = Math.max(window.innerHeight * 0.165, 135);
+      const topMargin = 0; // Handled by CSS padding on container
+      
+      // Try to reserve space for touch controls first
+      let availableHeight = window.innerHeight - touchControlHeight - topMargin - (window.innerHeight * 0.015); // Account for top padding
+      let availableWidth = window.innerWidth;
 
       // Maintain 10:20 aspect ratio (width:height = 1:2)
       const aspectRatio = 1 / 2;
@@ -182,12 +185,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (availableWidth / availableHeight > aspectRatio) {
         // Height is the limiting factor
-        newHeight = Math.min(availableHeight, window.innerHeight * 0.7);
+        newHeight = availableHeight;
         newWidth = newHeight * aspectRatio;
       } else {
-        // Width is the limiting factor
-        newWidth = Math.min(availableWidth, window.innerWidth * 0.9);
+        // Width is the limiting factor  
+        newWidth = availableWidth;
         newHeight = newWidth / aspectRatio;
+      }
+      
+      // If the canvas would be too small (less than 300px height), allow overlay
+      if (newHeight < 300) {
+        availableHeight = window.innerHeight - topMargin;
+        if (availableWidth / availableHeight > aspectRatio) {
+          newHeight = availableHeight;
+          newWidth = newHeight * aspectRatio;
+        } else {
+          newWidth = availableWidth;
+          newHeight = newWidth / aspectRatio;
+        }
       }
 
       CANVAS.width = newWidth;
