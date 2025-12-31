@@ -107,7 +107,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const touchControls = document.getElementById("touchControls");
   if (isMobile && touchControls) {
     touchControls.classList.remove("hidden");
-    // Initially hide touch controls (will show when game starts)
+    // Start hidden - will show when game starts
     touchControls.style.visibility = 'hidden';
 
     // Initialize touch controls in input handler
@@ -135,12 +135,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("finalTime").textContent = Math.floor(game.stats.time);
       document.getElementById("finalLines").textContent = game.stats.linesCleared;
       document.getElementById("gameOverOverlay").classList.remove("hidden");
+      // Hide touch controls on game over
+      if (touchControls && isMobile) {
+        touchControls.style.visibility = 'hidden';
+      }
       CANVAS.classList.add("death-animation");
       setTimeout(() => CANVAS.classList.remove("death-animation"), 500);
     },
     onGameWin: () => {
       document.getElementById("winTime").textContent = Math.floor(game.stats.time);
       document.getElementById("winOverlay").classList.remove("hidden");
+      // Hide touch controls on win
+      if (touchControls && isMobile) {
+        touchControls.style.visibility = 'hidden';
+      }
     },
     onLineCleared: (count) => {
       // Optional: Add visual effects for line clear here if not handled by particles
