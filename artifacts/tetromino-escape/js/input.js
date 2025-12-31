@@ -91,17 +91,53 @@ export class InputHandler {
 
     // Joystick (Right Touch Zone)
     if (elements.joystick) {
-      elements.joystick.addEventListener('touchstart', (e) => {
+      elements.joystick.addEventListener("touchstart", (e) => {
         e.preventDefault();
-        const touch = e.touches[0];
-        this.activeTouch = touch.identifier;
-        this.updateJoystick(touch, elements.joystick);
+        // Only track touches that start within the joystick zone
+        const rect = elements.joystick.getBoundingClientRect();
+        for (let touch of e.changedTouches) {
+          const x = touch.clientX;
+          const y = touch.clientY;
+          if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+            // This touch started in the joystick zone
+            if (this.activeTouch === null) {
+              this.activeTouch = touch.identifier;
+              this.updateJoystick(touch, elements.joystick);
+              break;
+            }
+          }
+        }
       });
 
-      elements.joystick.addEventListener('touchmove', (e) => {
+      elements.joystick.addEventListener("touchmove", (e) => {
         e.preventDefault();
+        if (this.activeTouch === null) return;
+
+        const rect = elements.joystick.getBoundingClientRect();
         for (let touch of e.touches) {
           if (touch.identifier === this.activeTouch) {
+            // Check if touch has moved too far outside the joystick zone
+            const x = touch.clientX;
+            const y = touch.clientY;
+            const margin = 50; // Allow some margin outside the zone
+
+            if (
+              x < rect.left - margin ||
+              x > rect.right + margin ||
+              y < rect.top - margin ||
+              y > rect.bottom + margin
+            ) {
+              // Touch has moved too far outside - stop tracking
+              this.activeTouch = null;
+              this.keys.ArrowLeft = false;
+              this.keys.ArrowRight = false;
+              elements.joystick.classList.remove("active-left", "active-right");
+              if (elements.indicator) {
+                elements.indicator.style.display = "none";
+              }
+              return;
+            }
+
             this.updateJoystick(touch, elements.joystick);
             break;
           }
