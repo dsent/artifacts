@@ -14,6 +14,7 @@ If you are forking this repo, adjust domain names and settings accordingly.
 4. Name your project `artifacts`.
 5. Upload the `setup/index.html` file (or the entire `setup/` folder) to initialize the project.
 6. Connect a custom domain (`artifacts.dsent.me`).
+7. Set **Settings** > **General** > **Production branch:** `prod`
 
 ## 2. GitHub Secrets
 
