@@ -272,6 +272,9 @@ export class AIController {
       }
 
       // Generate neighbors
+      // Order is important: Horizontal/Rotation moves are checked before Down.
+      // This ensures that BFS finds paths that move horizontally/rotate as early as possible
+      // (at the highest possible Y), rather than dropping first and moving later.
       const neighbors = [
         { action: "left", dx: -1, dy: 0, drot: 0 },
         { action: "right", dx: 1, dy: 0, drot: 0 },
@@ -298,6 +301,9 @@ export class AIController {
           const pieceBottomGrid = nextY + nextShape.length;
 
           if (pieceBottomGrid >= playerYGrid - 2) {
+            // Height restriction: only avoid player if we are close enough (vertical distance < 2).
+            // This allows the player to maneuver around the piece (e.g. jump on it) when it's high up,
+            // without the AI frantically retargeting to avoid the player.
             const nextInDanger = pieceLeft < dangerZone.right && pieceRight > dangerZone.left;
 
             if (nextInDanger) {
@@ -592,66 +598,44 @@ export class AIController {
         }
       }
 
-      // Clean up path steps we've already passed
-      while (this.path.length > 0 && this.path[0].y < piece.y) {
-        this.path.shift();
+      // Clean up path steps we've already passed or reached
+      while (this.path.length > 0) {
+        const step = this.path[0];
+        if (step.y < piece.y) {
+          // Passed by gravity
+          this.path.shift();
+        } else if (step.y === piece.y && step.x === piece.x && step.rotation === piece.rotation) {
+          // Reached
+          this.path.shift();
+        } else {
+          break;
+        }
       }
 
       if (this.path.length === 0) {
         return; // Path complete
       }
 
-      // Find target state: the last step at current Y, or if none, the first step at Y+1
-      // This tells us where we need to be before the next gravity tick
-      let targetState = null;
+      const nextStep = this.path[0];
 
-      for (const step of this.path) {
-        if (step.y === piece.y) {
-          // There's a step at current Y - we should match it
-          targetState = step;
-        } else if (step.y === piece.y + 1) {
-          // First step at next Y - we need to reach this x/rotation before falling
-          if (!targetState) {
-            targetState = step;
-          }
-          break; // Don't look further
-        } else if (step.y > piece.y + 1) {
-          // Too far ahead, stop looking
-          break;
-        }
-      }
-
-      if (!targetState) {
-        return; // No immediate moves needed
-      }
-
-      // If we're already at target state, nothing to do
-      if (piece.x === targetState.x && piece.rotation === targetState.rotation) {
-        // Clean up this step if it's at current Y
-        if (
-          this.path.length > 0 &&
-          this.path[0].y === piece.y &&
-          this.path[0].x === piece.x &&
-          this.path[0].rotation === piece.rotation
-        ) {
-          this.path.shift();
-        }
+      // If next step is down (y > piece.y), we wait for gravity
+      if (nextStep.y > piece.y) {
         return;
       }
 
-      // Execute move toward target
+      // Execute move toward next step
       let success = false;
 
-      if (piece.rotation !== targetState.rotation) {
-        const newRot = targetState.rotation;
+      if (piece.rotation !== nextStep.rotation) {
+        const newRot = nextStep.rotation;
         const newShape = getShape(piece.type, newRot);
         if (this.engine.canPlacePieceWithPlayer(piece, 0, 0, newShape)) {
           piece.rotation = newRot;
           piece.shape = newShape;
           success = true;
         }
-      } else if (piece.x !== targetState.x) {
-        const dx = Math.sign(targetState.x - piece.x);
+      } else if (piece.x !== nextStep.x) {
+        const dx = Math.sign(nextStep.x - piece.x);
         if (this.engine.canPlacePieceWithPlayer(piece, dx, 0)) {
           piece.x += dx;
           success = true;

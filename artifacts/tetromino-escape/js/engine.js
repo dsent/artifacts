@@ -360,8 +360,8 @@ export class GameEngine {
     const scaledDt = dt * this.settings.speed;
 
     this.timers.aiMove += scaledDt * 1000;
-    if (this.timers.aiMove >= this.settings.diffConfig.aiMoveInterval) {
-      this.timers.aiMove = 0;
+    while (this.timers.aiMove >= this.settings.diffConfig.aiMoveInterval) {
+      this.timers.aiMove -= this.settings.diffConfig.aiMoveInterval;
       this.ai.update();
     }
 
