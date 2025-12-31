@@ -4,13 +4,14 @@ Simple prioritized list. No detailed plans.
 
 ## P0
 
+- Fix starting screen/pause layout (it's ugly now).
+- Add Christmas theme (snow falling from Dec 20 to Jan 10).
+
 ## P1
 
-- Fix starting screen/pause layout (it's ugly now).
 - Add sound effects.
 - Add background music.
 - Add mobile support (touch controls, responsive layout).
-- Add Christmas theme (snow falling from Dec 20 to Jan 10).
 
 ## Completed
 
