@@ -11,39 +11,53 @@
       <div class="game-wrapper">
         <canvas id="gameCanvas" width="350" height="700"></canvas>
 
-        <div id="startOverlay" class="overlay">
-          <h1>TETROMINO ESCAPE</h1>
-          <p class="subtitle">Escape before you're trapped!</p>
-          <p>Climb, jump, and run through falling Tetromino blocks</p>
-          <p>Reach the top to win!</p>
-          <p style="color: #e94560; margin-top: 15px">⚠️ If a line completes with you in it, you die!</p>
-          <p style="color: #f0a000; margin-top: 5px">⚠️ If a block lands on you, you get squished!</p>
+        <div id="startOverlay" class="overlay start-overlay">
+          <div class="start-content">
+            <header class="start-header">
+              <h1>TETROMINO<br><span>ESCAPE</span></h1>
+              <p class="tagline">Escape before you're trapped!</p>
+            </header>
 
-          <div class="difficulty-selector">
-            <label>Difficulty:</label>
-            <div class="difficulty-buttons">
-              <button class="diff-btn" data-difficulty="easy">Easy</button>
-              <button class="diff-btn selected" data-difficulty="normal">Normal</button>
-              <button class="diff-btn" data-difficulty="hard">Hard</button>
+            <div class="start-description">
+              <p>Climb, jump, and run through falling Tetromino blocks.</p>
+              <p class="goal">Reach the top to win!</p>
             </div>
-          </div>
 
-          <div class="difficulty-selector">
-            <label>Game Speed:</label>
-            <div class="difficulty-buttons">
-              <button class="speed-btn" data-speed="0.5">0.5x</button>
-              <button class="speed-btn" data-speed="0.75">0.75x</button>
-              <button class="speed-btn selected" data-speed="1">1x</button>
-              <button class="speed-btn" data-speed="1.25">1.25x</button>
-              <button class="speed-btn" data-speed="1.5">1.5x</button>
+            <div class="warnings-box">
+              <div id="lineDeathWarning" class="warning warning-red" style="display: none;">
+                <span class="warning-icon">⚠</span>
+                <span>Line completes with you in it = Death</span>
+              </div>
+              <div class="warning warning-yellow">
+                <span class="warning-icon">⚠</span>
+                <span>Block lands on you = Squished</span>
+              </div>
             </div>
-          </div>
 
-          <button class="btn" id="start-btn">START GAME</button>
-          <p class="pause-hint">
-            Press <span class="key">S</span> to sabotage · <span class="key">P</span>/<span class="key">Esc</span> to
-            pause
-          </p>
+            <div class="settings-section">
+              <div class="setting-group">
+                <label>Difficulty</label>
+                <div class="difficulty-buttons">
+                  <button class="diff-btn" data-difficulty="easy">Easy</button>
+                  <button class="diff-btn selected" data-difficulty="normal">Normal</button>
+                  <button class="diff-btn" data-difficulty="hard">Hard</button>
+                </div>
+              </div>
+
+              <div class="setting-group">
+                <label>Speed</label>
+                <div class="difficulty-buttons speed-buttons">
+                  <button class="speed-btn" data-speed="0.5">0.5×</button>
+                  <button class="speed-btn" data-speed="0.75">0.75×</button>
+                  <button class="speed-btn selected" data-speed="1">1×</button>
+                  <button class="speed-btn" data-speed="1.25">1.25×</button>
+                  <button class="speed-btn" data-speed="1.5">1.5×</button>
+                </div>
+              </div>
+            </div>
+
+            <button class="btn start-btn" id="start-btn">START GAME</button>
+          </div>
         </div>
 
         <div id="pauseOverlay" class="overlay hidden">
