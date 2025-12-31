@@ -17,10 +17,15 @@ If you are forking this repo, adjust domain names and settings accordingly.
 
 ## 2. GitHub Secrets
 
-You need to add the following secrets to your GitHub repository (**Settings** > **Secrets and variables** > **Actions**):
+You need to add the following secrets to your GitHub repository. Go to **Settings** > **Secrets and variables** > **Actions**, and click **New repository secret** (do not use Environment secrets or Variables, as the workflows are configured to read from Repository Secrets).
 
 - `CLOUDFLARE_API_TOKEN`: A Cloudflare API token with `Cloudflare Pages: Edit` permissions.
-- `CLOUDFLARE_ACCOUNT_ID`: Your Cloudflare Account ID (found on the dashboard overview page).
+  - Go to **My Profile** > **API Tokens**.
+  - Click **Create Token** > **Create Custom Token** > **Get started**.
+  - **Permissions**: `Account` > `Cloudflare Pages` > `Edit`.
+  - **Account Resources**: `Include` > Select your account.
+  - Click **Continue to summary** > **Create Token**.
+- `CLOUDFLARE_ACCOUNT_ID`: Your Cloudflare Account ID (**Account Home** > burger menu to the right of the account name > **Copy Account ID**).
 
 ## 3. Main Site Redirects
 
