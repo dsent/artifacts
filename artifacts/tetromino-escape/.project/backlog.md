@@ -9,6 +9,11 @@ Simple prioritized list. No detailed plans.
 - Add sound effects.
 - Add background music.
 
+## P2
+
+- Save settings (difficulty, sound on/off) in local storage.
+- Add high score tracking per difficulty.
+
 ## Completed
 
 - 2025-12-31 (done): Add mobile support (touch controls, responsive layout).
