@@ -17,15 +17,16 @@ Each artifact should follow these conventions to ensure compatibility with the m
 
 1. **Entry Point:** The main web entry point must be named `index.html` within the artifact directory.
 2. **AI Instructions:** Each artifact should have its own `AGENTS.md` file providing project-specific context. It should reference this root `AGENTS.md`.
-3. **Build Process:**
+3. **Backlog:** Each artifact must include a backlog file at `.project/backlog.md`. Both `README.md` and `AGENTS.md` should link to this backlog.
+4. **Build Process:**
    - If an artifact requires a build step, it must expose it via:
      - `package.json`: `npm run build` (production) and `npm run build:dev` (preview).
      - `pyproject.toml`: `uv run build.py` (expects a `build.py` script).
      - `build.ps1`: PowerShell script for custom build logic.
    - Build output must be placed in a `dist/` directory within the artifact folder.
    - If no build step is present, the deployment workflow will copy the artifact's source files to the global `dist/` directory.
-4. **Dependencies:** Use `package.json` for Node.js/JS and `pyproject.toml` (with `uv`) for Python.
-5. **Licensing:** Each artifact should include its own `LICENSE` file. The root `LICENSE` applies only to monorepo infrastructure and build scripts.
+5. **Dependencies:** Use `package.json` for Node.js/JS and `pyproject.toml` (with `uv`) for Python.
+6. **Licensing:** Each artifact should include its own `LICENSE` file. The root `LICENSE` applies only to monorepo infrastructure and build scripts.
 
 ## Coding Standards
 

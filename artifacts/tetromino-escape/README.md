@@ -88,6 +88,10 @@ The project uses **ES modules** for better code organization and static analysis
 - `css/style.css`: Styling for the game interface.
 - `simulate.js`: Node.js ES module script for running headless simulations and AI analysis.
 
+## 📋 Backlog
+
+See the project's prioritized backlog at `.project/backlog.md` for current tasks, bugs, and maintenance work.
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

@@ -16,7 +16,7 @@ This repository is organized as a monorepo. Each artifact is contained within th
 
 1. **Create Directory:** Create a new directory for your artifact inside the `artifacts/` folder (e.g., `/artifacts/my-new-project/`).
 2. **Entry Point:** Ensure the main web entry point is named `index.html`.
-3. **AI Instructions:** Add an `AGENTS.md` file following the [monorepo conventions](./AGENTS.md).
+3. **AI Instructions:** Add an `AGENTS.md` file following the [monorepo conventions](./AGENTS.md), and include a backlog file at `.project/backlog.md`; link to it from `README.md` and `AGENTS.md`.
 4. **Build Process (Optional):**
     - For Node.js: Add a `package.json` with a `build` script.
     - For Python: Add a `pyproject.toml` and a `build.py` script.

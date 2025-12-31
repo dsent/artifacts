@@ -52,6 +52,7 @@ Follow the [monorepo conventions](../AGENTS.md) when adding new artifacts. All a
 
 - `index.html`: The main entry point.
 - `AGENTS.md`: Project-specific AI instructions (must reference the root `AGENTS.md`).
+- `.project/backlog.md`: Project backlog. Ensure `README.md` and `AGENTS.md` link to it.
 - `README.md`: Project documentation.
 - `LICENSE`: (Recommended) Project-specific license.
 
