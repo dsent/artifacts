@@ -77,10 +77,10 @@ The simulation outputs statistics such as:
 
 For debugging specific AI decisions or game states, you can "dump" the current state of the game:
 
-1.  Press **F9** while playing or paused.
-2.  The game state (JSON) will be logged to the browser console and copied to your clipboard.
-3.  Save this JSON to a file (e.g., `debug/state.json`).
-4.  Use `simulate.js` to analyze the state:
+1. Press **F9** while playing or paused.
+2. The game state (JSON) will be logged to the browser console and copied to your clipboard.
+3. Save this JSON to a file (e.g., `debug/state.json`).
+4. Use `simulate.js` to analyze the state:
 
 ```bash
 # Analyze AI decision for a specific state
