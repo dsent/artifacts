@@ -194,7 +194,8 @@ export class GameRenderer {
 
   drawDangerIndicators(game) {
     const { ctx } = this;
-    if (game.timers.playerLineClear > 0) {
+    // Only show danger indicators if playerCompletesLine is enabled for current difficulty
+    if (game.settings.diffConfig.playerCompletesLine && game.timers.playerLineClear > 0) {
       const cells = game.getPlayerCompletingCells();
       const pulse = Math.sin(Date.now() / 100) * 0.5 + 0.5; // 0 to 1
 
