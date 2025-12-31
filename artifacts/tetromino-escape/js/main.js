@@ -1,7 +1,7 @@
 import { GameEngine } from './engine.js';
 import { GameRenderer } from './renderer.js';
 import { InputHandler } from './input.js';
-import { loadConfig } from './config.js';
+import { loadConfig, DIFFICULTY_SETTINGS } from './config.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
   await loadConfig();
@@ -115,6 +115,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // --- EVENT LISTENERS ---
 
+  // Update line death warning visibility based on difficulty
+  function updateLineDeathWarning(diff) {
+    const warning = document.getElementById("lineDeathWarning");
+    if (warning && DIFFICULTY_SETTINGS[diff]) {
+      warning.style.display = DIFFICULTY_SETTINGS[diff].playerCompletesLine ? "flex" : "none";
+    }
+  }
+
   // UI Buttons - Difficulty Selection
   document.querySelectorAll(".diff-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
@@ -125,6 +133,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.querySelectorAll(".diff-btn").forEach((b) => {
           b.classList.toggle("selected", b.dataset.difficulty === diff);
         });
+        // Update line death warning visibility
+        updateLineDeathWarning(diff);
       }
     });
   });

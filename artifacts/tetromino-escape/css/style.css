@@ -400,27 +400,3 @@ body {
   font-size: 1.1em;
   box-shadow: 0 4px 20px rgba(233, 69, 96, 0.4);
 }
-
-.start-controls-hint {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  font-size: 0.7em;
-  color: #666;
-  margin-top: 4px;
-}
-
-.start-controls-hint .key {
-  background: rgba(233, 69, 96, 0.5);
-  padding: 3px 6px;
-  margin: 0 2px;
-  font-size: 0.9em;
-  min-width: 24px;
-}
-
-.start-controls-hint .separator {
-  color: #444;
-  margin: 0 4px;
-}
