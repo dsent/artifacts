@@ -15,7 +15,7 @@ export class GameEngine {
     this.constants.CELL_SIZE = this.height / this.constants.ROWS;
     this.constants.PLAYER_WIDTH = this.constants.CELL_SIZE * this.constants.PLAYER_WIDTH_RATIO;
     this.constants.PLAYER_HEIGHT = this.constants.CELL_SIZE * this.constants.PLAYER_HEIGHT_RATIO;
-    
+
     // Pre-calculate ground check dimensions (used frequently in physics loop)
     this.constants.GROUND_CHECK_WIDTH = this.constants.PLAYER_WIDTH * this.constants.GROUND_CHECK_WIDTH_RATIO;
     this.constants.GROUND_CHECK_OFFSET = (this.constants.PLAYER_WIDTH - this.constants.GROUND_CHECK_WIDTH) / 2;
@@ -302,9 +302,9 @@ export class GameEngine {
     // Use a narrower check (centered) to prevent cliff-edge exploitation
     // Player must have solid ground under their center mass, not just a corner pixel
     return this.checkCollision(
-      player.x + this.constants.GROUND_CHECK_OFFSET, 
-      player.y + this.constants.PLAYER_HEIGHT + this.constants.GROUND_CHECK_DISTANCE, 
-      this.constants.GROUND_CHECK_WIDTH, 
+      player.x + this.constants.GROUND_CHECK_OFFSET,
+      player.y + this.constants.PLAYER_HEIGHT + this.constants.GROUND_CHECK_DISTANCE,
+      this.constants.GROUND_CHECK_WIDTH,
       1
     );
   }
@@ -324,6 +324,7 @@ export class GameEngine {
       x: startX,
       y: 0,
       fallStepCount: 0,
+      diffConfig: this.settings.diffConfig, // Attach current difficulty to this piece
     };
 
     this.ai.reset();
@@ -334,8 +335,8 @@ export class GameEngine {
     }
 
     // Always calculate with player avoidance enabled at spawn
-    // The danger zone reward will discourage targeting near the player
-    this.ai.calculateTarget(null, true);
+    // Use the difficulty config attached to this piece
+    this.ai.calculateTarget(this.currentPiece.diffConfig, true);
 
     if (this.sabotageQueued) {
       this.sabotageQueued = false;
@@ -369,7 +370,8 @@ export class GameEngine {
     if (this.timers.pieceFall >= this.settings.diffConfig.baseFallTick) {
       // Smart retargeting: only recalculate if meaningful conditions are met
       if (this.shouldRetarget()) {
-        this.ai.calculateTarget(null, true, true); // avoidPlayer=true, playerTriggered=true
+        // Use the difficulty config attached to this piece (may be sabotage)
+        this.ai.calculateTarget(this.currentPiece.diffConfig, true, true); // avoidPlayer=true, playerTriggered=true
       }
 
       this.timers.pieceFall = 0;
@@ -708,7 +710,7 @@ export class GameEngine {
     if (this.ai.target) {
       const dangerZone = this.getPlayerDangerZone(this.settings.diffConfig.dangerZoneMargin);
       if (!dangerZone) return false;
-      
+
       const targetShape = getShape(this.currentPiece.type, this.ai.target.rotation);
       const targetLeft = this.ai.target.x;
       const targetRight = this.ai.target.x + targetShape[0].length;
@@ -822,7 +824,7 @@ export class GameEngine {
   tryPushPlayerDown(overlapInfo) {
     const p = this.player;
     const pushY = overlapInfo.by + overlapInfo.bh;
-    
+
     if (pushY + this.constants.PLAYER_HEIGHT <= this.height) {
       const gridCollision = this.checkGridCollisionOnly(
         p.x,
@@ -847,7 +849,7 @@ export class GameEngine {
    */
   tryPushPlayerHorizontally(overlapInfo) {
     const p = this.player;
-    
+
     // Only push horizontally if the horizontal overlap is less than threshold
     const horizontalOverlap = Math.min(overlapInfo.overlapLeft, overlapInfo.overlapRight);
     const thresholdWidth = this.constants.PLAYER_WIDTH * this.constants.HORIZONTAL_OVERLAP_THRESHOLD;
@@ -920,8 +922,16 @@ export class GameEngine {
   }
 
   applySabotageToCurrent() {
+    if (!this.currentPiece) return;
+
+    // Mark this piece as sabotaged by changing its difficulty config
+    this.currentPiece.diffConfig = DIFFICULTY_SETTINGS.sabotage;
+
+    // Start erratic visual timer
     this.timers.sabotage = this.settings.diffConfig.sabotageDuration * 1000;
-    this.ai.calculateTarget(DIFFICULTY_SETTINGS.sabotage, true); // Use sabotage config, with player avoidance enabled (but inverted)
+
+    // Recalculate target with sabotage config
+    this.ai.calculateTarget(this.currentPiece.diffConfig, true);
 
     let dropDist = this.getDropDistance();
     if (dropDist > 8) {
@@ -982,7 +992,14 @@ export class GameEngine {
   selectDifficulty(diff) {
     this.settings.difficulty = diff;
     this.settings.diffConfig = DIFFICULTY_SETTINGS[diff];
-    if (this.currentPiece && this.status === "playing") this.ai.calculateTarget();
+    if (this.currentPiece && this.status === "playing") {
+      // Don't change sabotaged pieces - they keep their sabotage config
+      // Only update piece config if it's not sabotaged
+      if (this.currentPiece.diffConfig !== DIFFICULTY_SETTINGS.sabotage) {
+        this.currentPiece.diffConfig = this.settings.diffConfig;
+      }
+      this.ai.calculateTarget(this.currentPiece.diffConfig, true);
+    }
   }
 
   selectSpeed(speed) {
@@ -1073,6 +1090,7 @@ export class GameEngine {
         shape: getShape(p.type, p.rotation),
         color: TETROMINOES[p.type].color,
         fallStepCount: p.fallStepCount || 0,
+        diffConfig: this.settings.diffConfig, // Use current game difficulty when loading
       };
     }
 

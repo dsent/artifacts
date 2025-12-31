@@ -38,6 +38,36 @@ export const DEFAULT_CONSTANTS = {
   PARTICLE_LIFETIME: 1, // seconds
   PARTICLE_DECAY_RATE: 2, // life reduction per second
   PARTICLE_VELOCITY_RANGE: 8, // max velocity in any direction
+  SABOTAGE_COLOR: "#ff0033", // Bright red for sabotaged pieces
+
+  // UI Colors
+  BACKGROUND_COLOR: "#0a0a15",
+  GRID_LINE_COLOR: "rgba(255, 255, 255, 0.05)",
+  ESCAPE_ZONE_COLOR: "#4ecca3",
+  ESCAPE_ZONE_BG: "rgba(78, 204, 163, 0.15)",
+
+  // Block rendering colors
+  BLOCK_HIGHLIGHT_COLOR: "rgba(255, 255, 255, 0.3)",
+  BLOCK_SHADOW_COLOR: "rgba(0, 0, 0, 0.3)",
+  SABOTAGE_INDICATOR_BG: "#000000",
+
+  // Danger indicator colors
+  DANGER_INDICATOR_COLOR: "red",
+  DANGER_INDICATOR_ALPHA_BASE: 0.3,
+  DANGER_INDICATOR_ALPHA_PULSE: 0.3,
+
+  // Debug overlay colors
+  DEBUG_PATH_COLOR: "rgba(0, 255, 255, 0.4)",
+  DEBUG_TARGET_FILL: "rgba(255, 255, 0, 0.25)",
+  DEBUG_TARGET_STROKE: "rgba(255, 255, 0, 0.8)",
+  DEBUG_BG_COLOR: "rgba(0, 0, 0, 0.7)",
+  DEBUG_TEXT_COLOR: "#00ff00",
+
+  // Player Colors
+  PLAYER_BODY_COLOR: "#4ecca3",
+  PLAYER_HEAD_COLOR: "#ffd93d",
+  PLAYER_EYES_COLOR: "#1a1a2e",
+  PLAYER_LEGS_COLOR: "#e94560",
 
   // Ground Check Constants
   GROUND_CHECK_WIDTH_RATIO: 0.5, // Center portion of player to check for ground
@@ -156,6 +186,7 @@ export const TETROMINOES = {
 
 export const DIFFICULTY_SETTINGS = {
   easy: {
+    id: "easy",
     // Speed and timing
     baseFallTick: 800,
     aiMoveInterval: 300,
@@ -190,6 +221,7 @@ export const DIFFICULTY_SETTINGS = {
     sabotageCooldown: 3.0,
   },
   normal: {
+    id: "normal",
     // Speed and timing
     baseFallTick: 600,
     aiMoveInterval: 115,
@@ -222,6 +254,7 @@ export const DIFFICULTY_SETTINGS = {
     sabotageCooldown: 5.0,
   },
   hard: {
+    id: "hard",
     // Speed and timing
     baseFallTick: 450,
     aiMoveInterval: 50,
@@ -260,6 +293,7 @@ export const DIFFICULTY_SETTINGS = {
   // - Heavily penalizing line clears
   // - Actively targeting the player's danger zone
   sabotage: {
+    id: "sabotage",
     // Line clearing: HEAVILY penalize clearing lines
     lineReward: -500,
     multiLineBonus: false,

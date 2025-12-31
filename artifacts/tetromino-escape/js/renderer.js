@@ -11,7 +11,7 @@ export class GameRenderer {
     const { ctx, canvas } = this;
 
     // Clear canvas
-    ctx.fillStyle = "#0a0a15";
+    ctx.fillStyle = game.constants.BACKGROUND_COLOR;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     if (["playing", "paused", "gameover", "win"].includes(game.status)) {
@@ -34,7 +34,7 @@ export class GameRenderer {
 
   drawGrid(game) {
     const { ctx, canvas } = this;
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+    ctx.strokeStyle = game.constants.GRID_LINE_COLOR;
     ctx.lineWidth = 1;
 
     // Vertical lines
@@ -60,31 +60,61 @@ export class GameRenderer {
             x * game.constants.CELL_SIZE,
             y * game.constants.CELL_SIZE,
             game.grid[y][x],
-            game.constants.CELL_SIZE
+            game.constants.CELL_SIZE,
+            game
           );
         }
       }
     }
   }
 
-  drawBlock(x, y, color, size) {
+  drawBlock(x, y, color, size, game, drawCross = false) {
     const { ctx } = this;
     const s = size;
+
+    // Always draw normal block rendering
     ctx.fillStyle = color;
     ctx.fillRect(x + 2, y + 2, s - 4, s - 4);
 
-    ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+    ctx.fillStyle = game.constants.BLOCK_HIGHLIGHT_COLOR;
     ctx.fillRect(x + 2, y + 2, s - 4, 6);
     ctx.fillRect(x + 2, y + 2, 6, s - 4);
 
-    ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+    ctx.fillStyle = game.constants.BLOCK_SHADOW_COLOR;
     ctx.fillRect(x + s - 8, y + 8, 6, s - 10);
     ctx.fillRect(x + 8, y + s - 8, s - 10, 6);
+
+    // Draw sabotage indicator if sabotaged
+    if (drawCross) {
+      const centerX = x + s / 2;
+      const centerY = y + s / 2;
+      const radius = s * 0.3; // 60% diameter = 30% radius
+
+      // Draw black circle background
+      ctx.fillStyle = game.constants.SABOTAGE_INDICATOR_BG;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw red cross inside the circle
+      ctx.strokeStyle = game.constants.SABOTAGE_COLOR;
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = "round";
+
+      const crossSize = radius * 0.65;
+      ctx.beginPath();
+      ctx.moveTo(centerX - crossSize, centerY - crossSize);
+      ctx.lineTo(centerX + crossSize, centerY + crossSize);
+      ctx.moveTo(centerX + crossSize, centerY - crossSize);
+      ctx.lineTo(centerX - crossSize, centerY + crossSize);
+      ctx.stroke();
+    }
   }
 
   drawCurrentPiece(game) {
     if (!game.currentPiece) return;
     const p = game.currentPiece;
+    const isSabotaged = p.diffConfig && p.diffConfig.id === "sabotage";
     for (let y = 0; y < p.shape.length; y++) {
       for (let x = 0; x < p.shape[y].length; x++) {
         if (p.shape[y][x]) {
@@ -92,7 +122,9 @@ export class GameRenderer {
             (p.x + x) * game.constants.CELL_SIZE,
             (p.y + y) * game.constants.CELL_SIZE,
             p.color,
-            game.constants.CELL_SIZE
+            game.constants.CELL_SIZE,
+            game,
+            isSabotaged
           );
         }
       }
@@ -116,17 +148,17 @@ export class GameRenderer {
     const h = game.constants.PLAYER_HEIGHT;
 
     // Body
-    ctx.fillStyle = "#4ecca3";
+    ctx.fillStyle = game.constants.PLAYER_BODY_COLOR;
     ctx.fillRect(p.x + w * 0.15, p.y + h * 0.28, w * 0.7, h * 0.45);
 
     // Head
-    ctx.fillStyle = "#ffd93d";
+    ctx.fillStyle = game.constants.PLAYER_HEAD_COLOR;
     ctx.beginPath();
     ctx.arc(p.x + w / 2, p.y + h * 0.18, w * 0.38, 0, Math.PI * 2);
     ctx.fill();
 
     // Eyes
-    ctx.fillStyle = "#1a1a2e";
+    ctx.fillStyle = game.constants.PLAYER_EYES_COLOR;
     const eyeOff = p.facingRight ? 3 : -3;
     ctx.beginPath();
     ctx.arc(p.x + w / 2 + eyeOff - 5, p.y + h * 0.16, 3, 0, Math.PI * 2);
@@ -134,13 +166,13 @@ export class GameRenderer {
     ctx.fill();
 
     // Legs
-    ctx.fillStyle = "#e94560";
+    ctx.fillStyle = game.constants.PLAYER_LEGS_COLOR;
     const legOff = Math.sin(Date.now() / 100) * 3 * (Math.abs(p.vx) > 0.1 ? 1 : 0);
     ctx.fillRect(p.x + w * 0.2, p.y + h * 0.7 + legOff, w * 0.25, h * 0.3);
     ctx.fillRect(p.x + w * 0.55, p.y + h * 0.7 - legOff, w * 0.25, h * 0.3);
 
     // Arms
-    ctx.fillStyle = "#ffd93d";
+    ctx.fillStyle = game.constants.PLAYER_HEAD_COLOR;
     const armWave = p.onGround ? 0 : Math.sin(Date.now() / 80) * 15;
     ctx.save();
     ctx.translate(p.x + w * 0.1, p.y + h * 0.32);
@@ -170,11 +202,11 @@ export class GameRenderer {
   drawEscapeZone(game) {
     const { ctx, canvas } = this;
     // Semi-transparent green background
-    ctx.fillStyle = "rgba(78, 204, 163, 0.15)";
+    ctx.fillStyle = game.constants.ESCAPE_ZONE_BG;
     ctx.fillRect(0, 0, canvas.width, game.constants.CELL_SIZE * 2);
 
     // Green dashed line at bottom of zone
-    ctx.strokeStyle = "#4ecca3";
+    ctx.strokeStyle = game.constants.ESCAPE_ZONE_COLOR;
     ctx.lineWidth = 2;
     ctx.setLineDash([10, 5]);
     ctx.beginPath();
@@ -184,7 +216,7 @@ export class GameRenderer {
     ctx.setLineDash([]);
 
     // "ESCAPE ZONE" text with better positioning
-    ctx.fillStyle = "#4ecca3";
+    ctx.fillStyle = game.constants.ESCAPE_ZONE_COLOR;
     ctx.font = "bold 16px sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -201,8 +233,9 @@ export class GameRenderer {
 
       ctx.save();
       ctx.shadowBlur = 10 + pulse * 10;
-      ctx.shadowColor = "red";
-      ctx.fillStyle = `rgba(255, 0, 0, ${0.3 + pulse * 0.3})`;
+      ctx.shadowColor = game.constants.DANGER_INDICATOR_COLOR;
+      const alpha = game.constants.DANGER_INDICATOR_ALPHA_BASE + pulse * game.constants.DANGER_INDICATOR_ALPHA_PULSE;
+      ctx.fillStyle = `rgba(255, 0, 0, ${alpha})`;
 
       cells.forEach((c) => {
         ctx.fillRect(
@@ -228,7 +261,7 @@ export class GameRenderer {
     // Draw path steps (if any) as small dots
     if (game.ai.path && game.ai.path.length > 0) {
       ctx.save();
-      ctx.fillStyle = "rgba(0, 255, 255, 0.4)";
+      ctx.fillStyle = game.constants.DEBUG_PATH_COLOR;
       for (const step of game.ai.path) {
         const stepShape = getShape(game.currentPiece.type, step.rotation);
         for (let y = 0; y < stepShape.length; y++) {
@@ -248,8 +281,8 @@ export class GameRenderer {
 
     // Highlight target position with semi-transparent overlay
     ctx.save();
-    ctx.fillStyle = "rgba(255, 255, 0, 0.25)";
-    ctx.strokeStyle = "rgba(255, 255, 0, 0.8)";
+    ctx.fillStyle = game.constants.DEBUG_TARGET_FILL;
+    ctx.strokeStyle = game.constants.DEBUG_TARGET_STROKE;
     ctx.lineWidth = 2;
 
     for (let y = 0; y < shape.length; y++) {
@@ -266,10 +299,10 @@ export class GameRenderer {
 
     // Draw score and debug info in top-left corner (inside canvas)
     ctx.save();
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillStyle = game.constants.DEBUG_BG_COLOR;
     ctx.fillRect(5, 35, 120, 72);
 
-    ctx.fillStyle = "#00ff00";
+    ctx.fillStyle = game.constants.DEBUG_TEXT_COLOR;
     ctx.font = "11px monospace";
     ctx.textAlign = "left";
     ctx.textBaseline = "top";

@@ -4,8 +4,6 @@ Simple prioritized list. No detailed plans.
 
 ## P0
 
-- Fix sabotage mechanics (add a separate difficulty setting that can't be selected by user, but is applied temporarily when sabotaging; should incentivize building debris and heavily penalize both line clears and dropping pieces on the user)
-
 ## P1
 
 - Fix starting screen/pause layout (it's ugly now).
@@ -16,5 +14,7 @@ Simple prioritized list. No detailed plans.
 
 ## Completed
 
+- 2025-12-31 (done): Rendering updates: get rid of hardcoded colors, visually indicate sabotaged pieces.
+- 2025-12-31 (done): Fix sabotage mechanics - added a separate "sabotage" difficulty setting that actively encourages building debris, heavily penalizes line clearing, and targets the player's danger zone.
 - 2025-12-31 (done): Set debug enabled or disabled by deployment scripts (disabled for production, enabled for dev/running locally).
-- 2025-12-30 (fixed): Bug: When switching from hard to other difficulties, an indicator of 'line clear danger' is shown despite those difficulties not having line clear death mechanics.
+- 2025-12-30 (done): Bug: When switching from hard to other difficulties, an indicator of 'line clear danger' is shown despite those difficulties not having line clear death mechanics.
