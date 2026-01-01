@@ -193,8 +193,8 @@ export const DIFFICULTY_SETTINGS = {
   easy: {
     id: "easy",
     // Speed and timing
-    baseFallTick: 800,
-    aiMoveInterval: 300,
+    baseFallTick: 650,
+    aiMoveInterval: 200,
     // Fast drop settings
     spawnDropDelay: 2,
     minFastDropHeight: 6,
@@ -215,7 +215,7 @@ export const DIFFICULTY_SETTINGS = {
     // Prohibitive penalty for cliffs that split the field (break funnel pattern)
     splitPenalty: -1000,
     // Avoiding player
-    dangerZoneMargin: 0.75,
+    dangerZoneMargin: 0.5,
     dangerZoneReward: -500,
     dangerZoneDecay: 1.0, // Never decays - always avoids player
     // Can the player complete lines?
@@ -223,13 +223,13 @@ export const DIFFICULTY_SETTINGS = {
     lineClearDelay: 800,
     // Sabotage settings
     sabotageDuration: 1.5,
-    sabotageCooldown: 3.0,
+    sabotageCooldown: 5.0,
   },
   normal: {
     id: "normal",
     // Speed and timing
-    baseFallTick: 600,
-    aiMoveInterval: 115,
+    baseFallTick: 550,
+    aiMoveInterval: 100,
     // Fast drop settings
     spawnDropDelay: 2,
     minFastDropHeight: 4,
@@ -237,18 +237,18 @@ export const DIFFICULTY_SETTINGS = {
     // Line clearing: slight preference to clear, but not aggressive
     lineReward: 20,
     // Holes: moderate penalty
-    holeReward: -40,
-    coveredHoleReward: 0,
+    holeReward: -50,
+    coveredHoleReward: -10,
     // Height: slight penalty
-    heightReward: -1,
-    maxHeightReward: -2,
+    heightReward: -2,
+    maxHeightReward: -3,
     // Bumpiness: moderate penalty
-    bumpinessReward: -5,
+    bumpinessReward: -10,
     // Terrain traversability (funnel-based)
     funnelPenaltyBase: -20,
     splitPenalty: -500,
     // Avoiding player
-    dangerZoneMargin: 0.5,
+    dangerZoneMargin: 0.25,
     dangerZoneReward: -250,
     dangerZoneDecay: 0.7, // Moderate decay - stops caring after ~3-4 retargets
     // Can the player complete lines?
@@ -256,7 +256,7 @@ export const DIFFICULTY_SETTINGS = {
     lineClearDelay: 800,
     // Sabotage settings
     sabotageDuration: 1.5,
-    sabotageCooldown: 5.0,
+    sabotageCooldown: 10.0,
   },
   hard: {
     id: "hard",
@@ -272,7 +272,7 @@ export const DIFFICULTY_SETTINGS = {
     multiLineBonus: true,
     // Holes: severe penalty
     holeReward: -100,
-    coveredHoleReward: 0,
+    coveredHoleReward: -20,
     // Height: penalize to keep stack low
     heightReward: -4,
     maxHeightReward: -5,
@@ -282,15 +282,15 @@ export const DIFFICULTY_SETTINGS = {
     funnelPenaltyBase: -10,
     splitPenalty: -250,
     // Avoiding player
-    dangerZoneMargin: 0.25,
+    dangerZoneMargin: 0.1,
     dangerZoneReward: -75,
     dangerZoneDecay: 0.4, // Aggressive decay - stops caring after ~2 retargets
     // Can the player complete lines?
     playerCompletesLine: true,
     lineClearDelay: 800,
     // Sabotage settings
-    sabotageDuration: 2.0,
-    sabotageCooldown: 8.0,
+    sabotageDuration: 1.5,
+    sabotageCooldown: 15.0,
   },
   // Sabotage: NOT user-selectable, only used when sabotaging
   // This difficulty actively tries to make the player's life harder by:
