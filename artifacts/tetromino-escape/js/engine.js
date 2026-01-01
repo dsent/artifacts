@@ -111,7 +111,7 @@ export class GameEngine {
     if (!this.player) return null;
     return {
       left: Math.floor(this.player.x / this.constants.CELL_SIZE - margin),
-      right: Math.ceil((this.player.x + this.constants.PLAYER_WIDTH) / this.constants.CELL_SIZE + margin)
+      right: Math.ceil((this.player.x + this.constants.PLAYER_WIDTH) / this.constants.CELL_SIZE + margin),
     };
   }
 
@@ -125,7 +125,7 @@ export class GameEngine {
       left: Math.floor(this.player.x / this.constants.CELL_SIZE),
       right: Math.floor((this.player.x + this.constants.PLAYER_WIDTH - 1) / this.constants.CELL_SIZE),
       top: Math.floor(this.player.y / this.constants.CELL_SIZE),
-      bottom: Math.floor((this.player.y + this.constants.PLAYER_HEIGHT - 1) / this.constants.CELL_SIZE)
+      bottom: Math.floor((this.player.y + this.constants.PLAYER_HEIGHT - 1) / this.constants.CELL_SIZE),
     };
   }
 
@@ -615,6 +615,12 @@ export class GameEngine {
       }
     }
 
+    // Before updating the grid, check if player will be stuck after the shift
+    // and push them down preemptively to avoid visual glitch
+    if (this.player && !this.player.dead) {
+      this.resolvePlayerBlockCollisionBeforeClear(linesToClear);
+    }
+
     linesToClear.sort((a, b) => a - b);
     let newGrid = this.grid.filter((_, index) => !linesToClear.includes(index));
     while (newGrid.length < this.constants.ROWS) {
@@ -631,6 +637,83 @@ export class GameEngine {
       const cutoff = this.stats.pieceCount - this.constants.LINE_HISTORY_WINDOW;
       this.stats.recentLines = this.stats.recentLines.filter((e) => e.piece > cutoff);
     }
+  }
+
+  /**
+   * Resolve player collision with blocks BEFORE line clear
+   * Simulates where blocks will be after the clear and preemptively pushes player down
+   * This prevents the player from being visually stuck in blocks even for one frame
+   * @param {Array<number>} linesToClear - Array of row indices that will be cleared
+   */
+  resolvePlayerBlockCollisionBeforeClear(linesToClear) {
+    if (!this.player || linesToClear.length === 0) return;
+
+    // Create a simulated grid showing where blocks will be after the clear
+    linesToClear.sort((a, b) => a - b);
+    let simulatedGrid = this.grid.filter((_, index) => !linesToClear.includes(index));
+    while (simulatedGrid.length < this.constants.ROWS) {
+      simulatedGrid.unshift(Array(this.constants.COLS).fill(null));
+    }
+
+    // Check if player would collide with blocks in the new grid
+    const playerGridLeft = Math.floor(this.player.x / this.constants.CELL_SIZE);
+    const playerGridRight = Math.floor((this.player.x + this.constants.PLAYER_WIDTH) / this.constants.CELL_SIZE);
+    const playerGridTop = Math.floor(this.player.y / this.constants.CELL_SIZE);
+    const playerGridBottom = Math.floor((this.player.y + this.constants.PLAYER_HEIGHT) / this.constants.CELL_SIZE);
+
+    // Check if any grid cell that the player occupies has a block in the simulated grid
+    let wouldCollide = false;
+    for (let gy = playerGridTop; gy <= playerGridBottom && gy < this.constants.ROWS; gy++) {
+      if (gy < 0) continue;
+      for (let gx = playerGridLeft; gx <= playerGridRight && gx < this.constants.COLS; gx++) {
+        if (gx < 0) continue;
+        if (simulatedGrid[gy] && simulatedGrid[gy][gx] !== null) {
+          wouldCollide = true;
+          break;
+        }
+      }
+      if (wouldCollide) break;
+    }
+
+    if (!wouldCollide) return;
+
+    // Player would be stuck - push them down until they won't be
+    // We need to check against the simulated grid
+    let pushAttempts = 0;
+    const maxPushAttempts = this.constants.ROWS * this.constants.CELL_SIZE;
+
+    while (pushAttempts < maxPushAttempts) {
+      // Check if current position would collide in simulated grid
+      const checkGridTop = Math.floor(this.player.y / this.constants.CELL_SIZE);
+      const checkGridBottom = Math.floor((this.player.y + this.constants.PLAYER_HEIGHT) / this.constants.CELL_SIZE);
+
+      let stillColliding = false;
+      for (let gy = checkGridTop; gy <= checkGridBottom && gy < this.constants.ROWS; gy++) {
+        if (gy < 0) continue;
+        for (let gx = playerGridLeft; gx <= playerGridRight && gx < this.constants.COLS; gx++) {
+          if (gx < 0) continue;
+          if (simulatedGrid[gy] && simulatedGrid[gy][gx] !== null) {
+            stillColliding = true;
+            break;
+          }
+        }
+        if (stillColliding) break;
+      }
+
+      if (!stillColliding) break;
+
+      this.player.y += 1;
+      pushAttempts++;
+
+      // If player is pushed to the bottom, stop
+      if (this.player.y + this.constants.PLAYER_HEIGHT >= this.height) {
+        this.player.y = this.height - this.constants.PLAYER_HEIGHT;
+        break;
+      }
+    }
+
+    // Reset vertical velocity since player was forcibly moved
+    this.player.vy = 0;
   }
 
   /**
