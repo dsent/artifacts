@@ -1,9 +1,9 @@
-# GitHub Copilot Instructions - Artifacts Monorepo
+# Copilot Instructions
 
-This repository is a monorepo for various artifacts.
+## Context Priority
+1. **Artifact**: `/artifacts/<name>/AGENTS.md`
+2. **Root**: `../AGENTS.md`
 
-## General Rules
-
-Please refer to the root [AGENTS.md](../AGENTS.md) for comprehensive repository-wide conventions, coding standards, and artifact requirements.
-
-When working within an artifact directory (e.g., `/artifacts/tetromino-escape/`), please prioritize the instructions found in that directory's `AGENTS.md`.
+## Constraints
+- Follow `AGENTS.md` for build/deploy rules.
+- Check `.project/backlog.md` for tasks.

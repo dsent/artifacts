@@ -2,30 +2,18 @@
 applyTo: "**/*.js"
 ---
 
-# JavaScript Coding Standards
+# JavaScript Standards
 
-## General Principles
+## Syntax & Modules
+- Use ES6+ (let/const, arrow functions, classes).
+- Use ES Modules (`import`/`export`) with `.js` extensions.
+- Named exports preferred over default.
 
-- Use ES6+ syntax (let/const, arrow functions, classes, template literals).
-- Use ES modules (import/export) for all files.
-- Maintain a clean and modular code structure.
-- Use meaningful variable and function names.
-- Document functions with JSDoc where appropriate.
-
-## Module System
-
-- All JS files should be ES modules.
-- Use named exports unless a default export is specifically required by a framework.
-- Ensure all imports include the file extension (e.g., `import { foo } from './foo.js';`).
-
-## Style Guidelines
-
+## Style
 - Indentation: 2 spaces.
-- Semicolons: Use them consistently.
-- Quotes: Prefer single quotes unless double quotes are necessary.
-- Trailing commas: Use them in multi-line arrays and objects.
+- Semicolons: Required.
+- Quotes: Single quotes preferred.
+- Trailing commas: Multi-line arrays/objects.
 
 ## Testing
-
-- Prefer vanilla JS for testing logic where possible.
-- If a testing framework is used, follow its specific conventions.
+- Prefer vanilla JS logic.
