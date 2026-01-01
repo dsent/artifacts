@@ -1,6 +1,6 @@
-import { DEFAULT_CONSTANTS, TETROMINOES, DIFFICULTY_SETTINGS } from './config.js';
-import { getShape, getRandomTetrominoType } from './utils.js';
-import { AIController } from './ai.js';
+import { DEFAULT_CONSTANTS, TETROMINOES, DIFFICULTY_SETTINGS } from "./config.js";
+import { getShape, getRandomTetrominoType } from "./utils.js";
+import { AIController } from "./ai.js";
 
 export class GameEngine {
   constructor(config = {}) {
@@ -648,6 +648,18 @@ export class GameEngine {
   resolvePlayerBlockCollisionBeforeClear(linesToClear) {
     if (!this.player || linesToClear.length === 0) return;
 
+    // First, check if player is currently in a valid position (not stuck in blocks right now)
+    // We should only adjust the player if they're currently safe but would become unsafe
+    const isCurrentlyStuck = this.checkGridCollisionOnly(
+      this.player.x,
+      this.player.y,
+      this.constants.PLAYER_WIDTH,
+      this.constants.PLAYER_HEIGHT
+    );
+
+    // If player is already stuck, don't try to fix it here - let normal physics handle it
+    if (isCurrentlyStuck) return;
+
     // Create a simulated grid showing where blocks will be after the clear
     linesToClear.sort((a, b) => a - b);
     let simulatedGrid = this.grid.filter((_, index) => !linesToClear.includes(index));
@@ -655,65 +667,60 @@ export class GameEngine {
       simulatedGrid.unshift(Array(this.constants.COLS).fill(null));
     }
 
-    // Check if player would collide with blocks in the new grid
-    const playerGridLeft = Math.floor(this.player.x / this.constants.CELL_SIZE);
-    const playerGridRight = Math.floor((this.player.x + this.constants.PLAYER_WIDTH) / this.constants.CELL_SIZE);
-    const playerGridTop = Math.floor(this.player.y / this.constants.CELL_SIZE);
-    const playerGridBottom = Math.floor((this.player.y + this.constants.PLAYER_HEIGHT) / this.constants.CELL_SIZE);
+    // Check if player would collide with blocks in the new grid using SAME logic as checkGridCollisionOnly
+    // We must use the exact same collision box (px + pw - 1) to avoid false positives where the player
+    // is safe in the current grid but "stuck" in the simulated grid due to stricter collision checks
+    const checkCollisionInGrid = (grid, py) => {
+      const px = this.player.x;
+      const pw = this.constants.PLAYER_WIDTH;
+      const ph = this.constants.PLAYER_HEIGHT;
 
-    // Check if any grid cell that the player occupies has a block in the simulated grid
-    let wouldCollide = false;
-    for (let gy = playerGridTop; gy <= playerGridBottom && gy < this.constants.ROWS; gy++) {
-      if (gy < 0) continue;
-      for (let gx = playerGridLeft; gx <= playerGridRight && gx < this.constants.COLS; gx++) {
-        if (gx < 0) continue;
-        if (simulatedGrid[gy] && simulatedGrid[gy][gx] !== null) {
-          wouldCollide = true;
-          break;
-        }
-      }
-      if (wouldCollide) break;
-    }
+      const left = Math.floor(px / this.constants.CELL_SIZE);
+      const right = Math.floor((px + pw - 1) / this.constants.CELL_SIZE);
+      const top = Math.floor(py / this.constants.CELL_SIZE);
+      const bottom = Math.floor((py + ph - 1) / this.constants.CELL_SIZE);
 
-    if (!wouldCollide) return;
-
-    // Player would be stuck - push them down until they won't be
-    // We need to check against the simulated grid
-    let pushAttempts = 0;
-    const maxPushAttempts = this.constants.ROWS * this.constants.CELL_SIZE;
-
-    while (pushAttempts < maxPushAttempts) {
-      // Check if current position would collide in simulated grid
-      const checkGridTop = Math.floor(this.player.y / this.constants.CELL_SIZE);
-      const checkGridBottom = Math.floor((this.player.y + this.constants.PLAYER_HEIGHT) / this.constants.CELL_SIZE);
-
-      let stillColliding = false;
-      for (let gy = checkGridTop; gy <= checkGridBottom && gy < this.constants.ROWS; gy++) {
-        if (gy < 0) continue;
-        for (let gx = playerGridLeft; gx <= playerGridRight && gx < this.constants.COLS; gx++) {
-          if (gx < 0) continue;
-          if (simulatedGrid[gy] && simulatedGrid[gy][gx] !== null) {
-            stillColliding = true;
-            break;
+      for (let gy = Math.max(0, top); gy <= Math.min(this.constants.ROWS - 1, bottom); gy++) {
+        for (let gx = Math.max(0, left); gx <= Math.min(this.constants.COLS - 1, right); gx++) {
+          if (grid[gy][gx] !== null) {
+            return true;
           }
         }
-        if (stillColliding) break;
+      }
+      return false;
+    };
+
+    // Check if player would be okay in the simulated grid
+    if (!checkCollisionInGrid(simulatedGrid, this.player.y)) {
+      return; // Player is safe both now and after the clear - no action needed
+    }
+
+    // Player is currently safe but would be stuck after the clear
+    // Find the first clear position below them in the simulated grid
+    let testY = this.player.y;
+    const maxPushDistance = this.constants.CELL_SIZE * 4; // Limit how far we push
+    let pushedDistance = 0;
+
+    while (pushedDistance < maxPushDistance) {
+      testY += 1;
+      pushedDistance += 1;
+
+      // If player would be pushed to the bottom, stop
+      if (testY + this.constants.PLAYER_HEIGHT >= this.height) {
+        testY = this.height - this.constants.PLAYER_HEIGHT;
+        break;
       }
 
-      if (!stillColliding) break;
-
-      this.player.y += 1;
-      pushAttempts++;
-
-      // If player is pushed to the bottom, stop
-      if (this.player.y + this.constants.PLAYER_HEIGHT >= this.height) {
-        this.player.y = this.height - this.constants.PLAYER_HEIGHT;
+      // Check if this new position is clear in the simulated grid
+      if (!checkCollisionInGrid(simulatedGrid, testY)) {
         break;
       }
     }
 
-    // Reset vertical velocity since player was forcibly moved
+    // Update player position and reset physics
+    this.player.y = testY;
     this.player.vy = 0;
+    this.player.onGround = false;
   }
 
   /**
