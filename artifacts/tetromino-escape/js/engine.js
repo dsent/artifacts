@@ -78,6 +78,79 @@ export class GameEngine {
 
     // Input state
     this.input = { keys: {} };
+
+    // History tracking for debugging and replay
+    // Events are stored as compact arrays: [time_ms, type, ...data]
+    // Types: G=game start, S=spawn, T=target, A=AI moves, R=retarget,
+    //        L=lock, C=clear, P=player, B=sabotage, F=fall
+    this.history = [];
+    this.historyEnabled = true;
+    this.lastPlayerSnapshot = null;
+    this.pendingAIMoves = ""; // Accumulate AI moves for current piece
+  }
+
+  /**
+   * Record an event to history
+   * @param {string} type - Event type (single char)
+   * @param  {...any} data - Event data
+   */
+  recordEvent(type, ...data) {
+    if (!this.historyEnabled) return;
+    const timeMs = Math.round(this.stats.time * 1000);
+    this.history.push([timeMs, type, ...data]);
+  }
+
+  /**
+   * Record player position snapshot if significantly changed
+   * @param {boolean} force - Force recording even if not changed significantly
+   */
+  recordPlayerSnapshot(force = false) {
+    if (!this.historyEnabled || !this.player) return;
+
+    const snap = {
+      x: Math.round(this.player.x),
+      y: Math.round(this.player.y),
+      vx: Math.round(this.player.vx * 10) / 10,
+      vy: Math.round(this.player.vy * 10) / 10,
+      g: this.player.onGround ? 1 : 0,
+    };
+
+    if (force || !this.lastPlayerSnapshot ||
+        Math.abs(snap.x - this.lastPlayerSnapshot.x) > 5 ||
+        Math.abs(snap.y - this.lastPlayerSnapshot.y) > 5 ||
+        snap.g !== this.lastPlayerSnapshot.g) {
+      this.recordEvent('P', snap.x, snap.y, snap.vx, snap.vy, snap.g);
+      this.lastPlayerSnapshot = snap;
+    }
+  }
+
+  /**
+   * Record AI target after calculation
+   * @param {boolean} isRetarget - Whether this is a retarget (vs initial target)
+   */
+  recordAITarget(isRetarget = false) {
+    if (!this.historyEnabled || !this.ai.target) return;
+    const t = this.ai.target;
+    const type = isRetarget ? 'R' : 'T';
+    this.recordEvent(type, t.x, t.y, t.rotation, Math.round(this.ai.targetScore));
+  }
+
+  /**
+   * Record an AI move (single character code)
+   * @param {string} moveCode - l=left, r=right, R=rotate, d=drop, e=erratic
+   */
+  recordAIMove(moveCode) {
+    if (!this.historyEnabled) return;
+    this.pendingAIMoves += moveCode;
+  }
+
+  /**
+   * Flush accumulated AI moves to history
+   */
+  flushAIMoves() {
+    if (!this.historyEnabled || !this.pendingAIMoves) return;
+    this.recordEvent('A', this.pendingAIMoves);
+    this.pendingAIMoves = "";
   }
 
   initPlayer() {
@@ -135,6 +208,10 @@ export class GameEngine {
     this.status = "playing";
     this.waitingForPiece = true;
     this.timers.spawn = 0.5;
+
+    // Record game start with settings and initial player position
+    this.recordEvent('G', this.settings.difficulty, this.settings.speed,
+      Math.round(this.player.x), Math.round(this.player.y));
   }
 
   update(dt, inputState) {
@@ -334,9 +411,16 @@ export class GameEngine {
       return;
     }
 
+    // Record piece spawn with player position
+    this.recordEvent('S', type, startX, 0, 0,
+      this.player ? Math.round(this.player.x) : 0,
+      this.player ? Math.round(this.player.y) : 0);
+    this.recordPlayerSnapshot(true); // Force player snapshot at spawn
+
     // Always calculate with player avoidance enabled at spawn
     // Use the difficulty config attached to this piece
     this.ai.calculateTarget(this.currentPiece.diffConfig, true);
+    this.recordAITarget(false); // Record initial target
 
     if (this.sabotageQueued) {
       this.sabotageQueued = false;
@@ -370,8 +454,14 @@ export class GameEngine {
     if (this.timers.pieceFall >= this.settings.diffConfig.baseFallTick) {
       // Smart retargeting: only recalculate if meaningful conditions are met
       if (this.shouldRetarget()) {
+        const oldTarget = this.ai.target ? { ...this.ai.target } : null;
         // Use the difficulty config attached to this piece (may be sabotage)
         this.ai.calculateTarget(this.currentPiece.diffConfig, true, true); // avoidPlayer=true, playerTriggered=true
+        // Record if target actually changed
+        if (oldTarget && this.ai.target &&
+            (oldTarget.x !== this.ai.target.x || oldTarget.rotation !== this.ai.target.rotation)) {
+          this.recordAITarget(true);
+        }
       }
 
       this.timers.pieceFall = 0;
@@ -407,6 +497,11 @@ export class GameEngine {
         }
       }
     }
+
+    // Flush AI moves and record piece lock
+    this.flushAIMoves();
+    this.recordEvent('L', piece.type, piece.x, piece.y, piece.rotation, piece.fallStepCount);
+    this.recordPlayerSnapshot(true); // Snapshot player at lock time
 
     this.stats.pieceCount++;
     this.currentPiece = null;
@@ -633,6 +728,8 @@ export class GameEngine {
     this.onLineCleared(count);
 
     if (count > 0) {
+      // Record line clear event
+      this.recordEvent('C', linesToClear);
       this.stats.recentLines.push({ piece: this.stats.pieceCount, count });
       const cutoff = this.stats.pieceCount - this.constants.LINE_HISTORY_WINDOW;
       this.stats.recentLines = this.stats.recentLines.filter((e) => e.piece > cutoff);
@@ -1102,57 +1199,132 @@ export class GameEngine {
     const dropDist = this.getDropDistance();
     if (dropDist < 6) {
       this.sabotageQueued = true;
+      this.recordEvent('B', 'Q', dropDist); // Queued sabotage
     } else {
+      this.recordEvent('B', 'A', dropDist); // Applied sabotage
       this.applySabotageToCurrent();
     }
   }
 
+  /**
+   * Compress grid to sparse format (only non-null cells)
+   * Format: [[y, x, color], ...] - sorted by y,x for consistency
+   * @returns {Array} Sparse grid representation
+   */
+  compressGrid() {
+    const sparse = [];
+    for (let y = 0; y < this.constants.ROWS; y++) {
+      for (let x = 0; x < this.constants.COLS; x++) {
+        if (this.grid[y][x]) {
+          sparse.push([y, x, this.grid[y][x]]);
+        }
+      }
+    }
+    return sparse;
+  }
+
+  /**
+   * Decompress sparse grid back to full grid
+   * @param {Array} sparse - Sparse grid from compressGrid
+   * @returns {Array} Full 20x10 grid
+   */
+  decompressGrid(sparse) {
+    const grid = Array(this.constants.ROWS).fill().map(() => Array(this.constants.COLS).fill(null));
+    for (const [y, x, color] of sparse) {
+      if (y >= 0 && y < this.constants.ROWS && x >= 0 && x < this.constants.COLS) {
+        grid[y][x] = color;
+      }
+    }
+    return grid;
+  }
+
   // Debug: Dump current game state to a JSON-serializable object
+  // Version 2: Optimized format with history for replay
   dumpState() {
+    // Flush any pending AI moves before dumping
+    this.flushAIMoves();
+    this.recordPlayerSnapshot(true); // Capture current player position
+
     return {
-      version: 1,
-      settings: {
-        difficulty: this.settings.difficulty,
-        speed: this.settings.speed,
+      v: 2, // Version 2 - compact format with history
+      // Settings (compact keys)
+      s: {
+        d: this.settings.difficulty,
+        sp: this.settings.speed,
       },
-      grid: this.grid.map((row) => row.map((cell) => cell)), // Deep copy
-      player: this.player
-        ? {
-            x: this.player.x,
-            y: this.player.y,
-            vx: this.player.vx,
-            vy: this.player.vy,
-            onGround: this.player.onGround,
-            facingRight: this.player.facingRight,
-          }
+      // Grid: sparse format for efficiency (only non-null cells)
+      g: this.compressGrid(),
+      // Player state (compact, rounded values)
+      p: this.player
+        ? [
+            Math.round(this.player.x),
+            Math.round(this.player.y),
+            Math.round(this.player.vx * 10) / 10,
+            Math.round(this.player.vy * 10) / 10,
+            this.player.onGround ? 1 : 0,
+            this.player.facingRight ? 1 : 0,
+          ]
         : null,
-      currentPiece: this.currentPiece
-        ? {
-            type: this.currentPiece.type,
-            x: this.currentPiece.x,
-            y: this.currentPiece.y,
-            rotation: this.currentPiece.rotation,
-            fallStepCount: this.currentPiece.fallStepCount,
-          }
+      // Current piece (compact)
+      c: this.currentPiece
+        ? [
+            this.currentPiece.type,
+            this.currentPiece.x,
+            this.currentPiece.y,
+            this.currentPiece.rotation,
+            this.currentPiece.fallStepCount,
+          ]
         : null,
-      ai: {
-        target: this.ai.target,
-        targetScore: this.ai.targetScore,
-        retargetCount: this.ai.retargetCount,
-        lastPlayerGridX: this.ai.lastPlayerGridX,
+      // AI state (compact)
+      a: {
+        t: this.ai.target ? [this.ai.target.x, this.ai.target.y, this.ai.target.rotation] : null,
+        ts: Math.round(this.ai.targetScore || 0),
+        rc: this.ai.retargetCount,
+        lp: this.ai.lastPlayerGridX,
       },
-      stats: { ...this.stats },
-      timers: { ...this.timers },
+      // Stats
+      st: {
+        t: Math.round(this.stats.time * 1000), // ms for precision
+        l: this.stats.linesCleared,
+        pc: this.stats.pieceCount,
+      },
+      // Timers (all in ms, rounded)
+      tm: {
+        pf: Math.round(this.timers.pieceFall),
+        am: Math.round(this.timers.aiMove),
+        sp: Math.round(this.timers.spawn * 1000),
+        sb: Math.round(this.timers.sabotage),
+        sc: Math.round(this.timers.sabotageCooldown),
+        pl: Math.round(this.timers.playerLineClear),
+      },
+      // History - the complete event log for replay
+      // Events: [time_ms, type, ...data]
+      // Types: G=start, S=spawn, T=target, A=AI moves, R=retarget,
+      //        L=lock, C=clear, P=player, B=sabotage
+      h: this.history,
     };
   }
 
   // Debug: Load game state from a dump
+  // Supports both version 1 (legacy) and version 2 (compact with history)
   loadState(state) {
-    if (!state || state.version !== 1) {
-      console.error("Invalid state version");
+    if (!state) {
+      console.error("Invalid state: null");
       return false;
     }
 
+    // Detect version
+    const version = state.v || state.version;
+    if (version !== 1 && version !== 2) {
+      console.error("Invalid state version:", version);
+      return false;
+    }
+
+    if (version === 2) {
+      return this.loadStateV2(state);
+    }
+
+    // Version 1 (legacy format)
     // Apply settings
     this.settings.difficulty = state.settings.difficulty;
     this.settings.speed = state.settings.speed;
@@ -1180,7 +1352,7 @@ export class GameEngine {
         shape: getShape(p.type, p.rotation),
         color: TETROMINOES[p.type].color,
         fallStepCount: p.fallStepCount || 0,
-        diffConfig: this.settings.diffConfig, // Use current game difficulty when loading
+        diffConfig: this.settings.diffConfig,
       };
     }
 
@@ -1196,6 +1368,83 @@ export class GameEngine {
     // Restore stats and timers
     this.stats = { ...state.stats, recentLines: state.stats.recentLines || [] };
     this.timers = { ...state.timers };
+
+    this.status = "playing";
+    this.waitingForPiece = false;
+    this.history = [];
+
+    return true;
+  }
+
+  // Load version 2 (compact) state format
+  loadStateV2(state) {
+    // Apply settings
+    this.settings.difficulty = state.s.d;
+    this.settings.speed = state.s.sp;
+    this.settings.diffConfig = DIFFICULTY_SETTINGS[state.s.d];
+
+    // Restore grid from sparse format
+    this.grid = this.decompressGrid(state.g);
+
+    // Restore player from array format [x, y, vx, vy, onGround, facingRight]
+    if (state.p) {
+      this.player = {
+        x: state.p[0],
+        y: state.p[1],
+        vx: state.p[2],
+        vy: state.p[3],
+        onGround: state.p[4] === 1,
+        facingRight: state.p[5] === 1,
+        dead: false,
+      };
+    }
+
+    // Restore current piece from array format [type, x, y, rotation, fallStepCount]
+    if (state.c) {
+      const [type, x, y, rotation, fallStepCount] = state.c;
+      this.currentPiece = {
+        type,
+        x,
+        y,
+        rotation,
+        shape: getShape(type, rotation),
+        color: TETROMINOES[type].color,
+        fallStepCount: fallStepCount || 0,
+        diffConfig: this.settings.diffConfig,
+      };
+    }
+
+    // Restore AI state
+    this.ai.reset();
+    if (state.a) {
+      if (state.a.t) {
+        this.ai.target = { x: state.a.t[0], y: state.a.t[1], rotation: state.a.t[2] };
+      }
+      this.ai.targetScore = state.a.ts;
+      this.ai.retargetCount = state.a.rc || 0;
+      this.ai.lastPlayerGridX = state.a.lp;
+    }
+
+    // Restore stats (time is in ms, convert to seconds)
+    this.stats = {
+      time: (state.st.t || 0) / 1000,
+      linesCleared: state.st.l || 0,
+      pieceCount: state.st.pc || 0,
+      recentLines: [],
+    };
+
+    // Restore timers (spawn is in ms, convert to seconds)
+    this.timers = {
+      pieceFall: state.tm.pf || 0,
+      aiMove: state.tm.am || 0,
+      spawn: (state.tm.sp || 0) / 1000,
+      sabotage: state.tm.sb || 0,
+      sabotageCooldown: state.tm.sc || 0,
+      playerLineClear: state.tm.pl || 0,
+    };
+
+    // Restore history
+    this.history = state.h || [];
 
     this.status = "playing";
     this.waitingForPiece = false;

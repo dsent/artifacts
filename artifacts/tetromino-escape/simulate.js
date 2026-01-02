@@ -6,14 +6,19 @@
  *   node simulate.js --player [difficulty] [games] - Run with simulated player
  *   node simulate.js --state <file.json>      - Load state and analyze AI decision
  *   node simulate.js --state <file.json> --step [n]  - Step through n AI moves
+ *   node simulate.js --state <file.json> --history   - Show full game history
+ *   node simulate.js --state <file.json> --history --piece [n] - Show history around piece n
  *
- * Note: You can generate state JSON files by pressing F9 in the browser game.
+ * Note: You can generate state JSON files by pressing D or F9 in the browser game.
+ *       Version 2 state files include full game history for replay.
  *
  * Examples:
  *   node simulate.js easy 100
  *   node simulate.js --player hard 50
  *   node simulate.js --state dump.json
  *   node simulate.js --state dump.json --step 5
+ *   node simulate.js --state dump.json --history
+ *   node simulate.js --state dump.json --history --piece 5
  */
 
 import fs from 'fs';
@@ -30,6 +35,8 @@ let stepCount = 1;
 let difficulty = "easy";
 let numGames = 100;
 let useSimulatedPlayer = false;
+let showHistory = false;
+let historyPieceFilter = null;
 
 for (let i = 0; i < args.length; i++) {
   if (args[i] === "--state" && args[i + 1]) {
@@ -38,6 +45,11 @@ for (let i = 0; i < args.length; i++) {
     i++;
   } else if (args[i] === "--step" && args[i + 1]) {
     stepCount = parseInt(args[i + 1]) || 1;
+    i++;
+  } else if (args[i] === "--history" || args[i] === "-h") {
+    showHistory = true;
+  } else if (args[i] === "--piece" && args[i + 1]) {
+    historyPieceFilter = parseInt(args[i + 1]) || null;
     i++;
   } else if (args[i] === "--verbose" || args[i] === "-v") {
     global.TE_DEBUG_AI = true;
@@ -915,6 +927,16 @@ function analyzeState() {
     process.exit(1);
   }
 
+  // Detect format version
+  const version = stateData.v || stateData.version || 1;
+  console.log(`State format version: ${version}`);
+
+  // If history mode and v2, show history directly
+  if (showHistory && version === 2 && stateData.h) {
+    displayHistory(stateData.h, historyPieceFilter);
+    return;
+  }
+
   global.TE_DEBUG_AI = true;
 
   const engine = createEngine();
@@ -1069,6 +1091,15 @@ function analyzeState() {
 
   console.log("\n=== GRID STATE ===");
   printGrid(engine);
+
+  // Show history if available and requested (or show summary)
+  if (engine.history && engine.history.length > 0) {
+    if (showHistory) {
+      displayHistory(engine.history, historyPieceFilter);
+    } else {
+      console.log(`\nHistory available: ${engine.history.length} events (use --history to view)`);
+    }
+  }
 }
 
 function printGrid(engine) {
@@ -1118,6 +1149,180 @@ function printGrid(engine) {
   }
   console.log("  └──────────┘");
   console.log("\nLegend: █=locked, ▓=piece, ○=target, P=player, ·=empty");
+}
+
+/**
+ * Format time in ms to readable string
+ */
+function formatTime(ms) {
+  const s = ms / 1000;
+  return `${s.toFixed(2)}s`;
+}
+
+/**
+ * Parse and display history events
+ * Event types:
+ *   G = Game start: [time, 'G', difficulty, speed, playerX, playerY]
+ *   S = Piece spawn: [time, 'S', type, x, y, rot, playerX, playerY]
+ *   T = Initial target: [time, 'T', x, y, rot, score]
+ *   R = Retarget: [time, 'R', x, y, rot, score]
+ *   A = AI moves: [time, 'A', moveString] (l=left, r=right, R=rotate, D=drop, e/E=erratic)
+ *   L = Piece lock: [time, 'L', type, x, y, rot, fallSteps]
+ *   C = Line clear: [time, 'C', [lineIndices]]
+ *   P = Player snapshot: [time, 'P', x, y, vx, vy, onGround]
+ *   B = Sabotage: [time, 'B', 'Q'|'A', dropDist] (Q=queued, A=applied)
+ */
+function displayHistory(history, pieceFilter = null) {
+  if (!history || history.length === 0) {
+    console.log("No history available.");
+    return;
+  }
+
+  console.log("\n=== GAME HISTORY ===");
+  console.log(`Total events: ${history.length}`);
+
+  // Group events by piece
+  const pieceGroups = [];
+  let currentGroup = { pieceNum: 0, events: [] };
+  let pieceNum = 0;
+
+  for (const event of history) {
+    const [time, type, ...data] = event;
+
+    if (type === 'S') {
+      // New piece spawned - start new group
+      if (currentGroup.events.length > 0) {
+        pieceGroups.push(currentGroup);
+      }
+      pieceNum++;
+      currentGroup = { pieceNum, events: [] };
+    }
+
+    currentGroup.events.push(event);
+  }
+
+  if (currentGroup.events.length > 0) {
+    pieceGroups.push(currentGroup);
+  }
+
+  console.log(`Total pieces: ${pieceNum}`);
+
+  // Filter if requested
+  let groupsToShow = pieceGroups;
+  if (pieceFilter !== null) {
+    groupsToShow = pieceGroups.filter(g =>
+      g.pieceNum === pieceFilter ||
+      g.pieceNum === pieceFilter - 1 ||
+      g.pieceNum === pieceFilter + 1
+    );
+    if (groupsToShow.length === 0) {
+      console.log(`No history found for piece ${pieceFilter}`);
+      return;
+    }
+    console.log(`Showing history around piece ${pieceFilter}:`);
+  }
+
+  console.log("─".repeat(80));
+
+  for (const group of groupsToShow) {
+    if (pieceFilter !== null && group.pieceNum === pieceFilter) {
+      console.log(`\n>>> PIECE #${group.pieceNum} <<< (${group.events.length} events)`);
+    } else {
+      console.log(`\n=== Piece #${group.pieceNum} === (${group.events.length} events)`);
+    }
+
+    for (const event of group.events) {
+      const [time, type, ...data] = event;
+      const timeStr = formatTime(time).padStart(8);
+
+      switch (type) {
+        case 'G':
+          console.log(`${timeStr} GAME START: difficulty=${data[0]}, speed=${data[1]}, player=(${data[2]}, ${data[3]})`);
+          break;
+        case 'S':
+          console.log(`${timeStr} SPAWN: ${data[0]} at (${data[1]}, ${data[2]}) rot=${data[3]}, player=(${data[4]}, ${data[5]})`);
+          break;
+        case 'T':
+          console.log(`${timeStr} TARGET: (${data[0]}, ${data[1]}) rot=${data[2]}, score=${data[3]}`);
+          break;
+        case 'R':
+          console.log(`${timeStr} RETARGET: (${data[0]}, ${data[1]}) rot=${data[2]}, score=${data[3]}`);
+          break;
+        case 'A':
+          const moves = data[0];
+          const moveDesc = describeMoves(moves);
+          console.log(`${timeStr} AI MOVES: ${moves} (${moveDesc})`);
+          break;
+        case 'L':
+          console.log(`${timeStr} LOCK: ${data[0]} at (${data[1]}, ${data[2]}) rot=${data[3]}, fell ${data[4]} rows`);
+          break;
+        case 'C':
+          const lines = data[0];
+          console.log(`${timeStr} CLEAR: ${lines.length} line(s) at rows [${lines.join(', ')}]`);
+          break;
+        case 'P':
+          const groundStr = data[4] ? 'grounded' : 'airborne';
+          console.log(`${timeStr} PLAYER: (${data[0]}, ${data[1]}) v=(${data[2]}, ${data[3]}) ${groundStr}`);
+          break;
+        case 'B':
+          const sabType = data[0] === 'Q' ? 'QUEUED' : 'APPLIED';
+          console.log(`${timeStr} SABOTAGE ${sabType}: drop distance=${data[1]}`);
+          break;
+        default:
+          console.log(`${timeStr} UNKNOWN: ${type} ${JSON.stringify(data)}`);
+      }
+    }
+  }
+
+  console.log("\n" + "─".repeat(80));
+
+  // Summary statistics
+  let spawnCount = 0, retargetCount = 0, clearCount = 0, sabotageCount = 0;
+  let totalMoves = 0;
+
+  for (const event of history) {
+    const type = event[1];
+    if (type === 'S') spawnCount++;
+    if (type === 'R') retargetCount++;
+    if (type === 'C') clearCount++;
+    if (type === 'B') sabotageCount++;
+    if (type === 'A') totalMoves += event[2].length;
+  }
+
+  console.log("\n=== HISTORY SUMMARY ===");
+  console.log(`Pieces spawned: ${spawnCount}`);
+  console.log(`AI retargets: ${retargetCount}`);
+  console.log(`Lines cleared: ${clearCount}`);
+  console.log(`Sabotages: ${sabotageCount}`);
+  console.log(`Total AI moves: ${totalMoves}`);
+}
+
+/**
+ * Describe AI move string in human-readable format
+ */
+function describeMoves(moves) {
+  if (!moves) return "none";
+
+  let left = 0, right = 0, rotate = 0, drop = 0, erratic = 0;
+
+  for (const c of moves) {
+    switch (c) {
+      case 'l': left++; break;
+      case 'r': right++; break;
+      case 'R': rotate++; break;
+      case 'D': drop++; break;
+      case 'e': case 'E': case 'X': erratic++; break;
+    }
+  }
+
+  const parts = [];
+  if (left > 0) parts.push(`${left}L`);
+  if (right > 0) parts.push(`${right}R`);
+  if (rotate > 0) parts.push(`${rotate}rot`);
+  if (drop > 0) parts.push(`${drop}drop`);
+  if (erratic > 0) parts.push(`${erratic}erratic`);
+
+  return parts.join(', ') || "none";
 }
 
 // Main

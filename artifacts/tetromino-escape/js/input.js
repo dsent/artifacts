@@ -31,8 +31,8 @@ export class InputHandler {
       this.onSabotage();
     }
 
-    // Dump State (Debug) - F9 to avoid conflict with D=move right
-    if (e.code === "F9") {
+    // Dump State (Debug) - F9 or D for quick access
+    if (e.code === "F9" || e.code === "KeyD") {
       e.preventDefault();
       this.onDumpState();
     }

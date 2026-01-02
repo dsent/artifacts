@@ -157,6 +157,7 @@ export class AIController {
 
     if (this.engine.canPlacePieceWithPlayer(piece, this.erraticDir, 0)) {
       piece.x += this.erraticDir;
+      this.engine.recordAIMove(this.erraticDir > 0 ? 'e' : 'E'); // e=erratic right, E=erratic left
     } else {
       this.erraticDir *= -1;
     }
@@ -170,6 +171,7 @@ export class AIController {
       ) {
         piece.rotation = newRot;
         piece.shape = newShape;
+        this.engine.recordAIMove('X'); // X=erratic rotate
       }
     }
   }
@@ -593,6 +595,7 @@ export class AIController {
           if (dropDist >= this.engine.settings.diffConfig.minFastDropHeight && !this.engine.isPlayerInDangerZone()) {
             piece.y = testPiece.y;
             this.path = [];
+            this.engine.recordAIMove('D'); // D=fast drop
             return;
           }
         }
@@ -633,12 +636,14 @@ export class AIController {
           piece.rotation = newRot;
           piece.shape = newShape;
           success = true;
+          this.engine.recordAIMove('R'); // R=rotate
         }
       } else if (piece.x !== nextStep.x) {
         const dx = Math.sign(nextStep.x - piece.x);
         if (this.engine.canPlacePieceWithPlayer(piece, dx, 0)) {
           piece.x += dx;
           success = true;
+          this.engine.recordAIMove(dx > 0 ? 'r' : 'l'); // r=right, l=left
         }
       }
 
