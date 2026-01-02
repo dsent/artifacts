@@ -160,8 +160,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   inputHandler.onSabotage = () => game.triggerSabotage();
 
   // Debug: Dump state to console and clipboard for use with simulate.js
+  // Works during gameplay, paused, game over, and win states
   inputHandler.onDumpState = () => {
-    if (game.status === "playing" || game.status === "paused") {
+    if (game.status === "playing" || game.status === "paused" ||
+        game.status === "gameover" || game.status === "win") {
       const state = game.dumpState();
       console.log("=== GAME STATE DUMP ===");
       console.log(JSON.stringify(state, null, 2));
