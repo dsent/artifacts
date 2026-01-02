@@ -91,10 +91,9 @@ class DebugAIController extends AIController {
       if (avoidPlayer && this.engine.player && this.engine.currentPiece) {
         const pieceType = this.engine.currentPiece.type;
         const diffConfig = overrideConfig || this.engine.settings.diffConfig;
-        const margin = diffConfig.dangerZoneMargin;
-        const playerGridLeft = Math.floor(this.engine.player.x / this.engine.constants.CELL_SIZE - margin);
+        const playerGridLeft = Math.floor(this.engine.player.x / this.engine.constants.CELL_SIZE);
         const playerGridRight = Math.ceil(
-          (this.engine.player.x + this.engine.constants.PLAYER_WIDTH) / this.engine.constants.CELL_SIZE + margin
+          (this.engine.player.x + this.engine.constants.PLAYER_WIDTH) / this.engine.constants.CELL_SIZE
         );
 
         for (const cand of this.lastBFSCandidates) {
@@ -958,15 +957,12 @@ function analyzeState() {
   }
 
   const diffConfig = engine.settings.diffConfig;
-  const margin = diffConfig.dangerZoneMargin;
   const playerGridX = Math.floor(engine.player.x / engine.constants.CELL_SIZE);
-  const playerGridLeft = Math.floor(engine.player.x / engine.constants.CELL_SIZE - margin);
-  const playerGridRight = Math.ceil(
-    (engine.player.x + engine.constants.PLAYER_WIDTH) / engine.constants.CELL_SIZE + margin
-  );
+  const playerGridLeft = Math.floor(engine.player.x / engine.constants.CELL_SIZE);
+  const playerGridRight = Math.ceil((engine.player.x + engine.constants.PLAYER_WIDTH) / engine.constants.CELL_SIZE);
 
   console.log(`Player grid X: ${playerGridX}`);
-  console.log(`Danger zone: columns ${playerGridLeft} to ${playerGridRight - 1} (margin: ${margin})`);
+  console.log(`Danger zone: columns ${playerGridLeft} to ${playerGridRight - 1}`);
 
   console.log("\n=== AI TARGET CALCULATION ===");
   engine.ai.calculateTarget(null, true);

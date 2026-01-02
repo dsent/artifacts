@@ -209,7 +209,7 @@ export class AIController {
     let dangerZoneReward = diffConfig.dangerZoneReward; // The reward is usually negative
 
     if (avoidPlayer && this.engine.player) {
-      dangerZone = this.engine.getPlayerDangerZone(diffConfig.dangerZoneMargin);
+      dangerZone = this.engine.getPlayerDangerZone();
 
       // Apply decay based on retarget count
       // Easy (1.0): never decays, Normal (0.7): moderate, Hard (0.4): aggressive
@@ -258,10 +258,8 @@ export class AIController {
         // Evaluate resting spot
         let dzReward = 0;
         if (avoidPlayer && dangerZone) {
-          const width = shape[0].length;
-          const pieceRight = current.x + width;
-          // The piece actually targets the player's grid space
-          if (current.x < dangerZone.right && pieceRight > dangerZone.left) {
+          // Use centralized danger check which accounts for ceiling/riding safety
+          if (this.engine.isPlayerInDangerZone(tempPiece)) {
             dzReward = dangerZoneReward;
           }
         }
@@ -294,29 +292,29 @@ export class AIController {
 
         const nextShape = shapes[nextRot];
 
-        if (avoidPlayer && dangerZone && (n.action === "left" || n.action === "right" || n.action === "rotate")) {
-          const width = nextShape[0].length;
-          const pieceLeft = nextX;
-          const pieceRight = nextX + width;
+        if (avoidPlayer && (n.action === "left" || n.action === "right" || n.action === "rotate")) {
+          // Check if this step puts the piece in a dangerous position
+          const nextPiece = {
+            x: nextX,
+            y: nextY,
+            rotation: nextRot,
+            shape: nextShape,
+            type: this.engine.currentPiece.type,
+          };
 
-          const playerYGrid = Math.floor(this.engine.player.y / this.engine.constants.CELL_SIZE);
-          const pieceBottomGrid = nextY + nextShape.length;
+          if (this.engine.isPlayerInDangerZone(nextPiece)) {
+            // If we are moving INTO danger (we weren't in danger before), forbid it.
+            // If we are already in danger, we allow moving (hopefully out of danger).
+            const currentPiece = {
+              x: current.x,
+              y: current.y,
+              rotation: current.rotation,
+              shape: shape,
+              type: this.engine.currentPiece.type,
+            };
 
-          if (pieceBottomGrid >= playerYGrid - 2) {
-            // Height restriction: only avoid player if we are close enough (vertical distance < 2).
-            // This allows the player to maneuver around the piece (e.g. jump on it) when it's high up,
-            // without the AI frantically retargeting to avoid the player.
-            const nextInDanger = pieceLeft < dangerZone.right && pieceRight > dangerZone.left;
-
-            if (nextInDanger) {
-              const curWidth = shape[0].length;
-              const curLeft = current.x;
-              const curRight = current.x + curWidth;
-              const curInDanger = curLeft < dangerZone.right && curRight > dangerZone.left;
-
-              if (!curInDanger) {
-                continue;
-              }
+            if (!this.engine.isPlayerInDangerZone(currentPiece)) {
+              continue;
             }
           }
         }
@@ -595,7 +593,7 @@ export class AIController {
           if (dropDist >= this.engine.settings.diffConfig.minFastDropHeight && !this.engine.isPlayerInDangerZone()) {
             piece.y = testPiece.y;
             this.path = [];
-            this.engine.recordAIMove('D'); // D=fast drop
+            this.engine.recordAIMove("D"); // D=fast drop
             return;
           }
         }

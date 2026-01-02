@@ -215,7 +215,6 @@ export const DIFFICULTY_SETTINGS = {
     // Prohibitive penalty for cliffs that split the field (break funnel pattern)
     splitPenalty: -1000,
     // Avoiding player
-    dangerZoneMargin: 0.5,
     dangerZoneReward: -500,
     dangerZoneDecay: 1.0, // Never decays - always avoids player
     // Can the player complete lines?
@@ -238,7 +237,7 @@ export const DIFFICULTY_SETTINGS = {
     lineReward: 20,
     // Holes: moderate penalty
     holeReward: -50,
-    coveredHoleReward: -10,
+    coveredHoleReward: 0,
     // Height: slight penalty
     heightReward: -2,
     maxHeightReward: -3,
@@ -248,7 +247,6 @@ export const DIFFICULTY_SETTINGS = {
     funnelPenaltyBase: -20,
     splitPenalty: -500,
     // Avoiding player
-    dangerZoneMargin: 0.25,
     dangerZoneReward: -250,
     dangerZoneDecay: 0.7, // Moderate decay - stops caring after ~3-4 retargets
     // Can the player complete lines?
@@ -272,7 +270,7 @@ export const DIFFICULTY_SETTINGS = {
     multiLineBonus: true,
     // Holes: severe penalty
     holeReward: -100,
-    coveredHoleReward: -20,
+    coveredHoleReward: 0,
     // Height: penalize to keep stack low
     heightReward: -4,
     maxHeightReward: -5,
@@ -282,7 +280,6 @@ export const DIFFICULTY_SETTINGS = {
     funnelPenaltyBase: -10,
     splitPenalty: -250,
     // Avoiding player
-    dangerZoneMargin: 0.1,
     dangerZoneReward: -75,
     dangerZoneDecay: 0.4, // Aggressive decay - stops caring after ~2 retargets
     // Can the player complete lines?
@@ -316,7 +313,6 @@ export const DIFFICULTY_SETTINGS = {
     // Prohibitive penalty for cliffs that split the field (break funnel pattern)
     splitPenalty: -1000,
     // Avoiding player
-    dangerZoneMargin: 0.75,
     dangerZoneReward: -500,
     dangerZoneDecay: 1.0, // Never decays - always avoids player
   },

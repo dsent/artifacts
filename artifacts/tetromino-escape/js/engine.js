@@ -115,11 +115,14 @@ export class GameEngine {
       g: this.player.onGround ? 1 : 0,
     };
 
-    if (force || !this.lastPlayerSnapshot ||
-        Math.abs(snap.x - this.lastPlayerSnapshot.x) > 5 ||
-        Math.abs(snap.y - this.lastPlayerSnapshot.y) > 5 ||
-        snap.g !== this.lastPlayerSnapshot.g) {
-      this.recordEvent('P', snap.x, snap.y, snap.vx, snap.vy, snap.g);
+    if (
+      force ||
+      !this.lastPlayerSnapshot ||
+      Math.abs(snap.x - this.lastPlayerSnapshot.x) > 5 ||
+      Math.abs(snap.y - this.lastPlayerSnapshot.y) > 5 ||
+      snap.g !== this.lastPlayerSnapshot.g
+    ) {
+      this.recordEvent("P", snap.x, snap.y, snap.vx, snap.vy, snap.g);
       this.lastPlayerSnapshot = snap;
     }
   }
@@ -131,7 +134,7 @@ export class GameEngine {
   recordAITarget(isRetarget = false) {
     if (!this.historyEnabled || !this.ai.target) return;
     const t = this.ai.target;
-    const type = isRetarget ? 'R' : 'T';
+    const type = isRetarget ? "R" : "T";
     this.recordEvent(type, t.x, t.y, t.rotation, Math.round(this.ai.targetScore));
   }
 
@@ -149,7 +152,7 @@ export class GameEngine {
    */
   flushAIMoves() {
     if (!this.historyEnabled || !this.pendingAIMoves) return;
-    this.recordEvent('A', this.pendingAIMoves);
+    this.recordEvent("A", this.pendingAIMoves);
     this.pendingAIMoves = "";
   }
 
@@ -180,11 +183,11 @@ export class GameEngine {
    * @param {number} margin - Margin in grid cells
    * @returns {{left: number, right: number}} Column range
    */
-  getPlayerDangerZone(margin) {
+  getPlayerDangerZone() {
     if (!this.player) return null;
     return {
-      left: Math.floor(this.player.x / this.constants.CELL_SIZE - margin),
-      right: Math.ceil((this.player.x + this.constants.PLAYER_WIDTH) / this.constants.CELL_SIZE + margin),
+      left: Math.floor(this.player.x / this.constants.CELL_SIZE),
+      right: Math.ceil((this.player.x + this.constants.PLAYER_WIDTH) / this.constants.CELL_SIZE),
     };
   }
 
@@ -210,8 +213,13 @@ export class GameEngine {
     this.timers.spawn = 0.5;
 
     // Record game start with settings and initial player position
-    this.recordEvent('G', this.settings.difficulty, this.settings.speed,
-      Math.round(this.player.x), Math.round(this.player.y));
+    this.recordEvent(
+      "G",
+      this.settings.difficulty,
+      this.settings.speed,
+      Math.round(this.player.x),
+      Math.round(this.player.y)
+    );
   }
 
   update(dt, inputState) {
@@ -412,9 +420,15 @@ export class GameEngine {
     }
 
     // Record piece spawn with player position
-    this.recordEvent('S', type, startX, 0, 0,
+    this.recordEvent(
+      "S",
+      type,
+      startX,
+      0,
+      0,
       this.player ? Math.round(this.player.x) : 0,
-      this.player ? Math.round(this.player.y) : 0);
+      this.player ? Math.round(this.player.y) : 0
+    );
     this.recordPlayerSnapshot(true); // Force player snapshot at spawn
 
     // Always calculate with player avoidance enabled at spawn
@@ -458,8 +472,11 @@ export class GameEngine {
         // Use the difficulty config attached to this piece (may be sabotage)
         this.ai.calculateTarget(this.currentPiece.diffConfig, true, true); // avoidPlayer=true, playerTriggered=true
         // Record if target actually changed
-        if (oldTarget && this.ai.target &&
-            (oldTarget.x !== this.ai.target.x || oldTarget.rotation !== this.ai.target.rotation)) {
+        if (
+          oldTarget &&
+          this.ai.target &&
+          (oldTarget.x !== this.ai.target.x || oldTarget.rotation !== this.ai.target.rotation)
+        ) {
           this.recordAITarget(true);
         }
       }
@@ -500,7 +517,7 @@ export class GameEngine {
 
     // Flush AI moves and record piece lock
     this.flushAIMoves();
-    this.recordEvent('L', piece.type, piece.x, piece.y, piece.rotation, piece.fallStepCount);
+    this.recordEvent("L", piece.type, piece.x, piece.y, piece.rotation, piece.fallStepCount);
     this.recordPlayerSnapshot(true); // Snapshot player at lock time
 
     this.stats.pieceCount++;
@@ -729,7 +746,7 @@ export class GameEngine {
 
     if (count > 0) {
       // Record line clear event
-      this.recordEvent('C', linesToClear);
+      this.recordEvent("C", linesToClear);
       this.stats.recentLines.push({ piece: this.stats.pieceCount, count });
       const cutoff = this.stats.pieceCount - this.constants.LINE_HISTORY_WINDOW;
       this.stats.recentLines = this.stats.recentLines.filter((e) => e.piece > cutoff);
@@ -858,22 +875,34 @@ export class GameEngine {
   isPlayerInDangerZone(piece = this.currentPiece) {
     if (!piece || !this.player) return false;
 
-    const pieceLeft = piece.x * this.constants.CELL_SIZE;
-    const pieceRight = (piece.x + piece.shape[0].length) * this.constants.CELL_SIZE;
-    const pieceBottom = (piece.y + piece.shape.length) * this.constants.CELL_SIZE;
+    // Use strict player bounds (no margin)
+    // This relies on the engine's push mechanics to handle minor overlaps (grazing)
+    // and ensures we don't flag safe spots (like standing on an L-ledge) as dangerous
+    // just because of a safety margin.
+    const pRect = {
+      left: this.player.x,
+      right: this.player.x + this.constants.PLAYER_WIDTH,
+      top: this.player.y,
+      bottom: this.player.y + this.constants.PLAYER_HEIGHT,
+    };
 
-    // If player is fully above the piece (riding on top), they're not in danger
-    // Allow a small tolerance for landing precision
-    if (this.player.y + this.constants.PLAYER_HEIGHT <= pieceBottom + this.constants.PIECE_LANDING_TOLERANCE) {
-      return false;
+    // Check each block of the piece for overlap with player rect
+    for (let y = 0; y < piece.shape.length; y++) {
+      for (let x = 0; x < piece.shape[y].length; x++) {
+        if (piece.shape[y][x]) {
+          const bLeft = (piece.x + x) * this.constants.CELL_SIZE;
+          const bRight = bLeft + this.constants.CELL_SIZE;
+          const bTop = (piece.y + y) * this.constants.CELL_SIZE;
+          const bBottom = bTop + this.constants.CELL_SIZE;
+
+          // Check intersection
+          if (bLeft < pRect.right && bRight > pRect.left && bTop < pRect.bottom && bBottom > pRect.top) {
+            return true;
+          }
+        }
+      }
     }
-
-    const margin = this.settings.diffConfig.dangerZoneMargin * this.constants.CELL_SIZE;
-    const playerLeft = this.player.x - margin;
-    const playerRight = this.player.x + this.constants.PLAYER_WIDTH + margin;
-
-    // Check horizontal overlap
-    return pieceLeft < playerRight && pieceRight > playerLeft;
+    return false;
   }
 
   /**
@@ -895,7 +924,7 @@ export class GameEngine {
     // Check if current target is already safe (outside danger zone)
     // If safe, no need to retarget regardless of player movement
     if (this.ai.target) {
-      const dangerZone = this.getPlayerDangerZone(this.settings.diffConfig.dangerZoneMargin);
+      const dangerZone = this.getPlayerDangerZone();
       if (!dangerZone) return false;
 
       const targetShape = getShape(this.currentPiece.type, this.ai.target.rotation);
@@ -1199,9 +1228,9 @@ export class GameEngine {
     const dropDist = this.getDropDistance();
     if (dropDist < 6) {
       this.sabotageQueued = true;
-      this.recordEvent('B', 'Q', dropDist); // Queued sabotage
+      this.recordEvent("B", "Q", dropDist); // Queued sabotage
     } else {
-      this.recordEvent('B', 'A', dropDist); // Applied sabotage
+      this.recordEvent("B", "A", dropDist); // Applied sabotage
       this.applySabotageToCurrent();
     }
   }
@@ -1229,7 +1258,9 @@ export class GameEngine {
    * @returns {Array} Full 20x10 grid
    */
   decompressGrid(sparse) {
-    const grid = Array(this.constants.ROWS).fill().map(() => Array(this.constants.COLS).fill(null));
+    const grid = Array(this.constants.ROWS)
+      .fill()
+      .map(() => Array(this.constants.COLS).fill(null));
     for (const [y, x, color] of sparse) {
       if (y >= 0 && y < this.constants.ROWS && x >= 0 && x < this.constants.COLS) {
         grid[y][x] = color;
