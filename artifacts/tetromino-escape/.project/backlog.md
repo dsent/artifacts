@@ -4,6 +4,8 @@ Simple prioritized list. No detailed plans.
 
 ## P0
 
+- Improve agent instructions: my default things like "question what I say".
+
 ## P1
 
 - Add sound effects.
