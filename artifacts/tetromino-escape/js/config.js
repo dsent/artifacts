@@ -74,9 +74,20 @@ export const DEFAULT_CONSTANTS = {
   GROUND_CHECK_DISTANCE: 1, // Pixels below player to check
 
   // Christmas Theme Colors
-  CHRISTMAS_SNOW_COLOR: 'rgba(255, 255, 255, 0.8)',
-  CHRISTMAS_HAT_RED: '#c41e3a',
-  CHRISTMAS_HAT_WHITE: '#ffffff',
+// Key Bindings Configuration
+export const KEYBINDINGS = {
+  // Movement
+  MOVE_LEFT: ['ArrowLeft', 'KeyA'],
+  MOVE_RIGHT: ['ArrowRight', 'KeyD'],
+  JUMP: ['ArrowUp', 'KeyW', 'Space'],
+  
+  // Game Controls
+  PAUSE: ['KeyP', 'Escape'],
+  SABOTAGE: ['KeyS'],
+  DUMP_STATE: ['F9', 'KeyT'],
+  
+  // Scroll prevention keys (keys that should preventDefault)
+  PREVENT_SCROLL: ['ArrowUp', 'ArrowLeft', 'ArrowRight', 'Space'],
 };
 
 export const TETROMINOES = {

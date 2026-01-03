@@ -1,4 +1,4 @@
-import { DEFAULT_CONSTANTS, TETROMINOES, DIFFICULTY_SETTINGS } from "./config.js";
+import { DEFAULT_CONSTANTS, TETROMINOES, DIFFICULTY_SETTINGS, KEYBINDINGS } from "./config.js";
 import { getShape, getRandomTetrominoType } from "./utils.js";
 import { AIController } from "./ai.js";
 
@@ -303,10 +303,10 @@ export class GameEngine {
 
     // Horizontal Movement
     let moveX = 0;
-    if (this.input.keys["ArrowLeft"] || this.input.keys["KeyA"]) {
+    if (KEYBINDINGS.MOVE_LEFT.some((key) => this.input.keys[key])) {
       moveX = -this.constants.MOVE_SPEED;
       player.facingRight = false;
-    } else if (this.input.keys["ArrowRight"] || this.input.keys["KeyD"]) {
+    } else if (KEYBINDINGS.MOVE_RIGHT.some((key) => this.input.keys[key])) {
       moveX = this.constants.MOVE_SPEED;
       player.facingRight = true;
     }
@@ -332,7 +332,7 @@ export class GameEngine {
 
     // Vertical Movement
     player.onGround = this.isOnGround();
-    if ((this.input.keys["ArrowUp"] || this.input.keys["KeyW"] || this.input.keys["Space"]) && player.onGround) {
+    if (KEYBINDINGS.JUMP.some((key) => this.input.keys[key]) && player.onGround) {
       player.vy = this.constants.JUMP_FORCE;
       player.onGround = false;
     }

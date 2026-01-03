@@ -1,10 +1,12 @@
+import { KEYBINDINGS } from "./config.js";
+
 export class InputHandler {
   constructor() {
     this.keys = {};
     this.onPause = () => {};
     this.onSabotage = () => {};
     this.onDumpState = () => {};
-    
+
     // Touch state
     this.touchElements = null;
     this.activeTouch = null; // Track active touch on joystick
@@ -17,22 +19,22 @@ export class InputHandler {
   handleKeyDown(e) {
     this.keys[e.code] = true;
     // Prevent scrolling for game keys
-    if (["ArrowUp", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) e.preventDefault();
+    if (KEYBINDINGS.PREVENT_SCROLL.includes(e.code)) e.preventDefault();
 
     // Toggle Pause
-    if (e.code === "KeyP" || e.code === "Escape") {
+    if (KEYBINDINGS.PAUSE.includes(e.code)) {
       e.preventDefault();
       this.onPause();
     }
 
     // Trigger Sabotage
-    if (e.code === "KeyS") {
+    if (KEYBINDINGS.SABOTAGE.includes(e.code)) {
       e.preventDefault();
       this.onSabotage();
     }
 
-    // Dump State (Debug) - F9 or D for quick access
-    if (e.code === "F9" || e.code === "KeyD") {
+    // Dump State (Debug)
+    if (KEYBINDINGS.DUMP_STATE.includes(e.code)) {
       e.preventDefault();
       this.onDumpState();
     }

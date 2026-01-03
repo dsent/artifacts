@@ -20,6 +20,7 @@ Simple prioritized list. No detailed plans.
 ## Completed
 
 - 2026-01-03 (done): Agent instructions improved in root AGENTS.md. Added: critical thinking (question user claims), approval workflow (propose before acting), decision documentation (`// DECISION:` comments).
+- 2026-01-02 (done): Configurable keybindings
 - 2026-01-01 (done): Bug: Player gets stuck in blocks when lines are cleared. Fixed by simulating post-clear grid state and preemptively adjusting player position. Crucially, the collision logic for the simulation now exactly matches the game's physics engine (using -1 pixel tolerance instead of epsilon) to prevent false positives where the player is safe but "technically" overlapping a block boundary.
 - 2025-12-31 (done): Add mobile support (touch controls, responsive layout).
 - 2025-12-31 (done): Add Christmas theme (snow falling from Dec 20 to Jan 10).
