@@ -54,38 +54,38 @@ export class InputHandler {
 
     // Jump button
     if (elements.jumpBtn) {
-      elements.jumpBtn.addEventListener('touchstart', (e) => {
+      elements.jumpBtn.addEventListener("touchstart", (e) => {
         e.preventDefault();
         this.keys.ArrowUp = true;
         this.keys.Space = true;
-        elements.jumpBtn.classList.add('active');
+        elements.jumpBtn.classList.add("active");
       });
 
-      elements.jumpBtn.addEventListener('touchend', (e) => {
+      elements.jumpBtn.addEventListener("touchend", (e) => {
         e.preventDefault();
         this.keys.ArrowUp = false;
         this.keys.Space = false;
-        elements.jumpBtn.classList.remove('active');
+        elements.jumpBtn.classList.remove("active");
       });
     }
 
     // Sabotage button
     if (elements.sabotageBtn) {
-      elements.sabotageBtn.addEventListener('touchstart', (e) => {
+      elements.sabotageBtn.addEventListener("touchstart", (e) => {
         e.preventDefault();
         this.onSabotage();
-        elements.sabotageBtn.classList.add('active');
+        elements.sabotageBtn.classList.add("active");
       });
 
-      elements.sabotageBtn.addEventListener('touchend', (e) => {
+      elements.sabotageBtn.addEventListener("touchend", (e) => {
         e.preventDefault();
-        elements.sabotageBtn.classList.remove('active');
+        elements.sabotageBtn.classList.remove("active");
       });
     }
 
     // Pause button
     if (elements.pauseBtn) {
-      elements.pauseBtn.addEventListener('touchstart', (e) => {
+      elements.pauseBtn.addEventListener("touchstart", (e) => {
         e.preventDefault();
         this.onPause();
       });
@@ -146,7 +146,7 @@ export class InputHandler {
         }
       });
 
-      elements.joystick.addEventListener('touchend', (e) => {
+      elements.joystick.addEventListener("touchend", (e) => {
         e.preventDefault();
         // Check if our tracked touch ended by looking at changedTouches
         let touchEnded = false;
@@ -156,26 +156,26 @@ export class InputHandler {
             break;
           }
         }
-        
+
         if (touchEnded) {
           this.activeTouch = null;
           this.keys.ArrowLeft = false;
           this.keys.ArrowRight = false;
-          elements.joystick.classList.remove('active-left', 'active-right');
+          elements.joystick.classList.remove("active-left", "active-right");
           if (elements.indicator) {
-            elements.indicator.style.display = 'none';
+            elements.indicator.style.display = "none";
           }
         }
       });
 
-      elements.joystick.addEventListener('touchcancel', (e) => {
+      elements.joystick.addEventListener("touchcancel", (e) => {
         e.preventDefault();
         this.activeTouch = null;
         this.keys.ArrowLeft = false;
         this.keys.ArrowRight = false;
-        elements.joystick.classList.remove('active-left', 'active-right');
+        elements.joystick.classList.remove("active-left", "active-right");
         if (elements.indicator) {
-          elements.indicator.style.display = 'none';
+          elements.indicator.style.display = "none";
         }
       });
     }
@@ -186,34 +186,34 @@ export class InputHandler {
     const rect = joystickElement.getBoundingClientRect();
     const relativeX = touch.clientX - rect.left;
     const width = rect.width;
-    
+
     // Split into thirds (discrete zones)
     const third = width / 3;
-    
+
     // Update indicator position
     if (this.touchElements.indicator) {
-      this.touchElements.indicator.style.display = 'block';
+      this.touchElements.indicator.style.display = "block";
       this.touchElements.indicator.style.left = `${relativeX}px`;
     }
-    
+
     // Determine which zone we're in
     if (relativeX < third) {
       // Left zone
       this.keys.ArrowLeft = true;
       this.keys.ArrowRight = false;
-      joystickElement.classList.add('active-left');
-      joystickElement.classList.remove('active-right');
+      joystickElement.classList.add("active-left");
+      joystickElement.classList.remove("active-right");
     } else if (relativeX > 2 * third) {
       // Right zone
       this.keys.ArrowLeft = false;
       this.keys.ArrowRight = true;
-      joystickElement.classList.add('active-right');
-      joystickElement.classList.remove('active-left');
+      joystickElement.classList.add("active-right");
+      joystickElement.classList.remove("active-left");
     } else {
       // Center zone (neutral)
       this.keys.ArrowLeft = false;
       this.keys.ArrowRight = false;
-      joystickElement.classList.remove('active-left', 'active-right');
+      joystickElement.classList.remove("active-left", "active-right");
     }
   }
 }

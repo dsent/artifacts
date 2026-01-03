@@ -27,7 +27,7 @@ export const DEFAULT_CONSTANTS = {
   HORIZONTAL_OVERLAP_THRESHOLD: 0.5, // Ratio for horizontal push decision
 
   // AI Decision Constants
-  AI_RETARGET_DISTANCE: 4, // Rows from landing before stopping retargets
+  AI_RETARGET_DISTANCE: 2, // Rows from landing before stopping retargets
   AI_FAST_DROP_HEIGHT: 6, // Minimum height for fast drop check
   AI_PANIC_HEIGHT: 2, // Rows from top that triggers panic mode
   AI_WARNING_HEIGHT: 4, // Rows from top for warning state
@@ -74,6 +74,11 @@ export const DEFAULT_CONSTANTS = {
   GROUND_CHECK_DISTANCE: 1, // Pixels below player to check
 
   // Christmas Theme Colors
+  CHRISTMAS_SNOW_COLOR: "rgba(255, 255, 255, 0.8)",
+  CHRISTMAS_HAT_RED: "#c41e3a",
+  CHRISTMAS_HAT_WHITE: "#ffffff",
+};
+
 // Key Bindings Configuration
 export const KEYBINDINGS = {
   // Movement
@@ -206,6 +211,9 @@ export const DIFFICULTY_SETTINGS = {
     // Speed and timing
     baseFallTick: 650,
     aiMoveInterval: 200,
+    aiSpawnGravityRows: 0, // Use gravity for first N rows after spawn
+    aiLandingGravityRows: 5, // Use gravity for last N rows before landing
+    aiDangerThreshold: 1, // AI ticks player must stay in danger before retarget
     // Fast drop settings
     spawnDropDelay: 2,
     minFastDropHeight: 6,
@@ -240,6 +248,9 @@ export const DIFFICULTY_SETTINGS = {
     // Speed and timing
     baseFallTick: 550,
     aiMoveInterval: 100,
+    aiSpawnGravityRows: 0, // Use gravity for first N rows after spawn
+    aiLandingGravityRows: 4, // Use gravity for last N rows before landing
+    aiDangerThreshold: 2, // AI ticks player must stay in danger before retarget
     // Fast drop settings
     spawnDropDelay: 2,
     minFastDropHeight: 4,
@@ -272,7 +283,9 @@ export const DIFFICULTY_SETTINGS = {
     // Speed and timing
     baseFallTick: 450,
     aiMoveInterval: 50,
-    // Fast drop settings
+    aiSpawnGravityRows: 0, // Use gravity for first N rows after spawn
+    aiLandingGravityRows: 3, // Use gravity for last N rows before landing
+    aiDangerThreshold: 4, // AI ticks player must stay in danger before retarget    // Fast drop settings
     spawnDropDelay: 0,
     minFastDropHeight: 3,
     minMovesBeforeFastDrop: 2,

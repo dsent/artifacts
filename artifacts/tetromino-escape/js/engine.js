@@ -482,7 +482,14 @@ export class GameEngine {
       }
 
       this.timers.pieceFall = 0;
-      if (this.canPlacePiece(this.currentPiece, 0, 1)) {
+      // Check if AI already moved piece down this cycle
+      if (this.currentPiece.aiControlledDescent) {
+        this.currentPiece.aiControlledDescent = false;
+        this.currentPiece.fallStepCount++;
+        if (this.checkPieceSquishesPlayer()) {
+          this.gameOver("You got squished by a falling block!");
+        }
+      } else if (this.canPlacePiece(this.currentPiece, 0, 1)) {
         this.currentPiece.y++;
         this.currentPiece.fallStepCount++;
         if (this.checkPieceSquishesPlayer()) {
@@ -937,24 +944,15 @@ export class GameEngine {
       }
     }
 
-    // Target is in danger zone - check if player moved significantly
-    const currentPlayerGridX = this.getPlayerGridX();
-
-    // If we haven't tracked player position yet, record it and DO retarget
-    // (this means the initial calculation picked a dangerous target)
-    if (this.ai.lastPlayerGridX === null) {
-      this.ai.lastPlayerGridX = currentPlayerGridX;
-      // Only retarget if piece is actually near player's Y level
-      return this.isPlayerInDangerZone();
+    // Target is in danger zone - check how long player has been there
+    // Use tick-based detection instead of movement-based
+    // This catches both moving and stationary players
+    if (this.ai.playerInDangerTicks >= this.settings.diffConfig.aiDangerThreshold) {
+      this.ai.playerInDangerTicks = 0; // Reset after triggering retarget
+      return true;
     }
 
-    // Player hasn't moved enough - no retarget
-    if (Math.abs(currentPlayerGridX - this.ai.lastPlayerGridX) < 1) {
-      return false;
-    }
-
-    // Player moved and target is in danger zone - retarget
-    return true;
+    return false;
   }
 
   checkCollision(px, py, pw, ph) {

@@ -18,6 +18,8 @@ export class AIController {
     // Track for meaningful retarget detection
     this.lastTargetKey = null;
     this.lastPlayerGridX = null;
+    this.pathThroughDanger = false;
+    this.playerInDangerTicks = 0;
   }
 
   /**
@@ -190,6 +192,9 @@ export class AIController {
       return;
     }
 
+    // Reset path danger flag for this calculation
+    this.pathThroughDanger = false;
+
     let bestScore = -Infinity;
     let bestState = null;
     const diffConfig = overrideConfig || this.engine.settings.diffConfig;
@@ -292,7 +297,7 @@ export class AIController {
 
         const nextShape = shapes[nextRot];
 
-        if (avoidPlayer && (n.action === "left" || n.action === "right" || n.action === "rotate")) {
+        if (avoidPlayer) {
           // Check if this step puts the piece in a dangerous position
           const nextPiece = {
             x: nextX,
@@ -302,9 +307,10 @@ export class AIController {
             type: this.engine.currentPiece.type,
           };
 
-          if (this.engine.isPlayerInDangerZone(nextPiece)) {
-            // If we are moving INTO danger (we weren't in danger before), forbid it.
-            // If we are already in danger, we allow moving (hopefully out of danger).
+          const nextInDanger = this.engine.isPlayerInDangerZone(nextPiece);
+
+          if (nextInDanger) {
+            // Check if we're currently in danger
             const currentPiece = {
               x: current.x,
               y: current.y,
@@ -313,9 +319,18 @@ export class AIController {
               type: this.engine.currentPiece.type,
             };
 
-            if (!this.engine.isPlayerInDangerZone(currentPiece)) {
+            const currentInDanger = this.engine.isPlayerInDangerZone(currentPiece);
+
+            // NEVER enter danger from safety
+            if (!currentInDanger) {
               continue;
             }
+
+            // If already in danger:
+            // - Allow ALL moves to find escape routes
+            // - Mark that this path goes through danger (affects descent speed)
+            // - The escape penalty in scoring will guide the AI toward safe destinations
+            this.pathThroughDanger = true;
           }
         }
 
@@ -357,9 +372,12 @@ export class AIController {
 
     // Track target changes for meaningful retarget counting
     const newTargetKey = bestState ? `${bestState.x},${bestState.y},${bestState.rotation}` : null;
-    if (playerTriggered && this.lastTargetKey !== null && newTargetKey !== this.lastTargetKey) {
-      // Target actually changed due to player movement - count it
-      this.retargetCount++;
+
+    if (newTargetKey) {
+      if (playerTriggered && this.lastTargetKey !== null && newTargetKey !== this.lastTargetKey) {
+        // Increment every time target changes due to player movement
+        this.retargetCount++;
+      }
     }
     this.lastTargetKey = newTargetKey;
 
@@ -560,6 +578,25 @@ export class AIController {
     if (!this.engine.currentPiece) return;
     this.moveCount++;
 
+    // Track how long player has been in TARGET's danger zone (not current piece position)
+    // This allows retargeting even when piece is far above but heading toward player
+    if (this.target) {
+      const targetPiece = {
+        x: this.target.x,
+        y: this.target.y,
+        rotation: this.target.rotation,
+        shape: getShape(this.engine.currentPiece.type, this.target.rotation),
+        type: this.engine.currentPiece.type,
+      };
+      if (this.engine.isPlayerInDangerZone(targetPiece)) {
+        this.playerInDangerTicks++;
+      } else {
+        this.playerInDangerTicks = 0;
+      }
+    } else {
+      this.playerInDangerTicks = 0;
+    }
+
     if (this.engine.timers.sabotage > 0 && this.state === "erratic") {
       this.performErraticMove();
       if (this.engine.getDropDistance() < this.engine.constants.AI_FAST_DROP_HEIGHT) {
@@ -570,34 +607,6 @@ export class AIController {
 
     if (this.path && this.path.length > 0) {
       const piece = this.engine.currentPiece;
-
-      let canFastDrop = true;
-      for (const step of this.path) {
-        if (step.x !== piece.x || step.rotation !== piece.rotation) {
-          canFastDrop = false;
-          break;
-        }
-      }
-
-      if (canFastDrop && this.moveCount >= this.engine.settings.diffConfig.minMovesBeforeFastDrop) {
-        if (piece.fallStepCount >= this.engine.settings.diffConfig.spawnDropDelay) {
-          const lastState = this.path[this.path.length - 1];
-          let dropDist = 0;
-          let testY = piece.y;
-          const testPiece = { ...piece };
-          while (this.engine.canPlacePiece(testPiece, 0, 1)) {
-            testPiece.y++;
-            dropDist++;
-          }
-
-          if (dropDist >= this.engine.settings.diffConfig.minFastDropHeight && !this.engine.isPlayerInDangerZone()) {
-            piece.y = testPiece.y;
-            this.path = [];
-            this.engine.recordAIMove("D"); // D=fast drop
-            return;
-          }
-        }
-      }
 
       // Clean up path steps we've already passed or reached
       while (this.path.length > 0) {
@@ -619,29 +628,77 @@ export class AIController {
 
       const nextStep = this.path[0];
 
-      // If next step is down (y > piece.y), we wait for gravity
+      // If path goes through danger, stop ALL moves (not just down)
+      // This forces retargeting while piece only falls via gravity
+      if (this.pathThroughDanger) {
+        return;
+      }
+
+      // If next step is down (y > piece.y)
       if (nextStep.y > piece.y) {
+        // Check spawn/landing buffers - use gravity for natural feel
+        const dropDistance = this.engine.getDropDistance();
+        const diffConfig = this.engine.settings.diffConfig;
+
+        // Too close to spawn - let gravity handle initial descent
+        if (piece.fallStepCount < diffConfig.aiSpawnGravityRows) {
+          return;
+        }
+
+        // Too close to landing - let gravity handle final descent
+        if (dropDistance <= diffConfig.aiLandingGravityRows) {
+          return;
+        }
+
+        // Path is clear and we're in the middle section - AI makes down move for faster descent
+        if (this.engine.canPlacePieceWithPlayer(piece, 0, 1)) {
+          piece.y++;
+          piece.aiControlledDescent = true; // Flag to prevent gravity this tick
+          this.engine.recordAIMove("d");
+          return;
+        }
+        // Can't move down - wait for next update
         return;
       }
 
       // Execute move toward next step
       let success = false;
 
+      // Check if we're currently in collision with player (emergency situation)
+      const currentlyInDanger = this.engine.isPlayerInDangerZone(piece);
+
       if (piece.rotation !== nextStep.rotation) {
         const newRot = nextStep.rotation;
         const newShape = getShape(piece.type, newRot);
-        if (this.engine.canPlacePieceWithPlayer(piece, 0, 0, newShape)) {
+        // If already in danger, allow rotation even if it would still be in danger
+        // (emergency escape - can't get worse)
+        if (currentlyInDanger) {
+          if (this.engine.canPlacePiece(piece, 0, 0, newShape)) {
+            piece.rotation = newRot;
+            piece.shape = newShape;
+            success = true;
+            this.engine.recordAIMove("R");
+          }
+        } else if (this.engine.canPlacePieceWithPlayer(piece, 0, 0, newShape)) {
           piece.rotation = newRot;
           piece.shape = newShape;
           success = true;
-          this.engine.recordAIMove('R'); // R=rotate
+          this.engine.recordAIMove("R");
         }
       } else if (piece.x !== nextStep.x) {
         const dx = Math.sign(nextStep.x - piece.x);
-        if (this.engine.canPlacePieceWithPlayer(piece, dx, 0)) {
+        // If already in danger, allow horizontal move even if it would still be in danger
+        // (emergency escape - can't get worse)
+        if (currentlyInDanger) {
+          if (this.engine.canPlacePiece(piece, dx, 0)) {
+            piece.x += dx;
+            success = true;
+            this.engine.recordAIMove(dx > 0 ? "r" : "l");
+          }
+        } else if (this.engine.canPlacePieceWithPlayer(piece, dx, 0)) {
           piece.x += dx;
           success = true;
-          this.engine.recordAIMove(dx > 0 ? 'r' : 'l'); // r=right, l=left
+          this.engine.recordAIMove(dx > 0 ? "r" : "l");
         }
       }
 
