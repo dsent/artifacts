@@ -1058,37 +1058,41 @@ export class GameEngine {
 
   /**
    * Try to push player horizontally away from the piece
+   * Always attempts to push regardless of overlap amount - tries both directions if needed
    * @param {Object} overlapInfo - Overlap information from findLowestOverlappingBlock
    * @returns {boolean} True if push was successful
    */
   tryPushPlayerHorizontally(overlapInfo) {
     const p = this.player;
 
-    // Only push horizontally if the horizontal overlap is less than threshold
-    const horizontalOverlap = Math.min(overlapInfo.overlapLeft, overlapInfo.overlapRight);
-    const thresholdWidth = this.constants.PLAYER_WIDTH * this.constants.HORIZONTAL_OVERLAP_THRESHOLD;
+    // Calculate both possible push positions
+    const pushLeft = overlapInfo.bx - this.constants.PLAYER_WIDTH;
+    const pushRight = overlapInfo.bx + overlapInfo.bw;
 
-    if (horizontalOverlap >= thresholdWidth) return false;
-
-    // Determine push direction: push away from the block center
+    // Determine primary direction: push away from the block center
     const blockCenterX = overlapInfo.bx + overlapInfo.bw / 2;
     const playerCenterX = p.x + this.constants.PLAYER_WIDTH / 2;
+    const preferLeft = playerCenterX < blockCenterX;
 
-    let pushX;
-    if (playerCenterX < blockCenterX) {
-      pushX = overlapInfo.bx - this.constants.PLAYER_WIDTH;
-    } else {
-      pushX = overlapInfo.bx + overlapInfo.bw;
+    // Try primary direction first, then fallback to opposite
+    const directions = preferLeft ? [pushLeft, pushRight] : [pushRight, pushLeft];
+
+    for (const pushX of directions) {
+      // Clamp to screen bounds
+      const clampedX = Math.max(0, Math.min(this.width - this.constants.PLAYER_WIDTH, pushX));
+
+      // Check if push position is actually outside the collision
+      // (clamping might push us back into the block)
+      if (clampedX + this.constants.PLAYER_WIDTH <= overlapInfo.bx ||
+          clampedX >= overlapInfo.bx + overlapInfo.bw) {
+        // Check if we can push there (no grid collision)
+        if (!this.checkGridCollisionOnly(clampedX, p.y, this.constants.PLAYER_WIDTH, this.constants.PLAYER_HEIGHT)) {
+          p.x = clampedX;
+          return true;
+        }
+      }
     }
 
-    // Clamp to screen bounds
-    pushX = Math.max(0, Math.min(this.width - this.constants.PLAYER_WIDTH, pushX));
-
-    // Check if we can push there (no grid collision)
-    if (!this.checkGridCollisionOnly(pushX, p.y, this.constants.PLAYER_WIDTH, this.constants.PLAYER_HEIGHT)) {
-      p.x = pushX;
-      return true;
-    }
     return false;
   }
 

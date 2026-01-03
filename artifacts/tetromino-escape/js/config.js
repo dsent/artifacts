@@ -214,6 +214,7 @@ export const DIFFICULTY_SETTINGS = {
     aiSpawnGravityRows: 0, // Use gravity for first N rows after spawn
     aiLandingGravityRows: 5, // Use gravity for last N rows before landing
     aiDangerThreshold: 1, // AI ticks player must stay in danger before retarget
+    aiDeadlyMoveThreshold: 2, // Prune horizontal moves entering danger within N rows of landing
     // Fast drop settings
     spawnDropDelay: 2,
     minFastDropHeight: 6,
@@ -254,6 +255,7 @@ export const DIFFICULTY_SETTINGS = {
     aiSpawnGravityRows: 0, // Use gravity for first N rows after spawn
     aiLandingGravityRows: 4, // Use gravity for last N rows before landing
     aiDangerThreshold: 2, // AI ticks player must stay in danger before retarget
+    aiDeadlyMoveThreshold: 3, // Prune horizontal moves entering danger within N rows of landing
     // Fast drop settings
     spawnDropDelay: 2,
     minFastDropHeight: 4,
@@ -292,6 +294,7 @@ export const DIFFICULTY_SETTINGS = {
     aiSpawnGravityRows: 0, // Use gravity for first N rows after spawn
     aiLandingGravityRows: 3, // Use gravity for last N rows before landing
     aiDangerThreshold: 4, // AI ticks player must stay in danger before retarget
+    aiDeadlyMoveThreshold: 4, // Prune horizontal moves entering danger within N rows of landing
     // Fast drop settings
     spawnDropDelay: 0,
     minFastDropHeight: 3,

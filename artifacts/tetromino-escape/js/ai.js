@@ -123,9 +123,24 @@ export class AIController {
   }
 
   /**
+   * Calculate drop distance for a hypothetical piece position
+   * @param {Object} piece - Piece with x, y, shape properties
+   * @returns {number} Number of rows until piece lands
+   */
+  getDropDistanceForPiece(piece) {
+    let dist = 0;
+    let testY = piece.y;
+    while (this.engine.canPlacePiece({ ...piece, y: testY }, 0, 1)) {
+      testY++;
+      dist++;
+    }
+    return dist;
+  }
+
+  /**
    * Check if rotation is possible without collision with locked blocks
    * @param {number} currentX - Current X position
-   * @param {number} currentY - Current Y position  
+   * @param {number} currentY - Current Y position
    * @param {Array} currentShape - Current piece shape
    * @param {Array} nextShape - Next rotation shape
    * @returns {boolean} True if rotation is possible
@@ -298,7 +313,7 @@ export class AIController {
         const nextShape = shapes[nextRot];
 
         if (avoidPlayer) {
-          // Check if this step puts the piece in a dangerous position
+          // Check if this step puts the piece in a dangerous position (colliding with player)
           const nextPiece = {
             x: nextX,
             y: nextY,
@@ -321,15 +336,25 @@ export class AIController {
 
             const currentInDanger = this.engine.isPlayerInDangerZone(currentPiece);
 
-            // NEVER enter danger from safety
             if (!currentInDanger) {
-              continue;
+              // This move would ENTER danger from safety
+              // Only prune if this is a "deadly move": horizontal/rotation near landing
+              const isHorizontalOrRotation = (n.dx !== 0 || n.drot !== 0);
+              const deadlyThreshold = diffConfig.aiDeadlyMoveThreshold ?? 3;
+
+              if (isHorizontalOrRotation) {
+                const dropDistance = this.getDropDistanceForPiece(nextPiece);
+                if (dropDistance <= deadlyThreshold) {
+                  // This is a surprise attack - prune it
+                  continue;
+                }
+              }
+              // Otherwise allow the move - reward system (dangerZoneReward) handles preference
+              // Downward moves are always allowed (player can see piece falling)
+              // High-altitude moves are allowed (player has time to react)
             }
 
-            // If already in danger:
-            // - Allow ALL moves to find escape routes
-            // - Mark that this path goes through danger (affects descent speed)
-            // - The escape penalty in scoring will guide the AI toward safe destinations
+            // Mark that this path goes through danger (may affect descent behavior)
             this.pathThroughDanger = true;
           }
         }
