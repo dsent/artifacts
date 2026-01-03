@@ -1,5 +1,26 @@
 # Artifacts Monorepo Instructions
 
+## Agent Behavior
+
+### Think Critically
+
+- **Question user assumptions.** If a claim seems off, verify it before acting.
+- **Don't take user statements at face value.** Check the code, test the behavior, look at context.
+- **Push back on bad ideas.** If a proposed change seems wrong or risky, say so and explain why.
+
+### Propose Before Acting
+
+- **For non-trivial changes, explain your plan first.** Don't silently refactor or restructure.
+- **Get explicit approval** before: architectural changes, deleting code, changing core logic, adding dependencies.
+- **Small, obvious fixes are OK without asking** (typos, formatting, clear bug fixes with obvious solutions).
+
+### Document Decisions
+
+- **Add `// DECISION:` comments** when making non-obvious choices that future agents might question or undo.
+- **Explain the "why"**, not just the "what". Bad: `// Use -1 tolerance`. Good: `// DECISION: Use -1px tolerance (not epsilon) to match physics engine collision behavior and prevent false overlaps.`
+- **Check existing `DECISION:` comments** before changing related code. Don't undo intentional fixes.
+- **Update `.project/backlog.md` Completed section** when finishing tasks, with brief note on approach.
+
 ## Repository Structure
 
 - `.github/workflows/`: CI/CD.

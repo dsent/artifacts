@@ -2,11 +2,12 @@
 
 Browser-based survival game: dodge AI-controlled falling Tetromino blocks, climb debris, escape the well.
 
+> **Important**: Follow root [AGENTS.md](../../AGENTS.md) for agent behavior rules.
+
 ## Project Brief
 
 - **Purpose:** Arcade survival game combining block-stacking mechanics with platformer gameplay.
 - **Tech Stack:** Vanilla JavaScript (ES6+), HTML5 Canvas, CSS3; Node.js for headless simulations.
-- **Reference:** See root [AGENTS.md](../../AGENTS.md) for general repository rules.
 - **Backlog:** See `.project/backlog.md` for the current prioritized tasks, bugs, and chores.
 
 ## Repo Structure
