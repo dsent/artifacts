@@ -406,22 +406,26 @@ export class AIController {
 
   /**
    * Evaluate a piece placement position
-   * 
+   *
    * SCORING SYSTEM:
-   * The AI uses a weighted scoring system with the following components:
-   * 
+   * The AI uses a weighted scoring system based on Dellacherie-Thiery research:
+   *
    * 1. Line Clearing: Rewards completing lines (varies by difficulty)
-   * 2. Holes: Penalizes gaps below blocks (harder to clear)
-   * 3. Height: Penalizes tall stacks (risk of game over)
-   * 4. Bumpiness: Penalizes uneven surfaces (harder to place pieces)
-   * 5. Terrain Traversability: Uses "funnel pattern" analysis
+   * 2. Holes: Base penalty for gaps below blocks
+   * 3. Hole Depth: Extra penalty for blocks above holes (burying makes holes harder to clear)
+   * 4. Weighted Holes: Upper-row holes penalized more than lower-row holes
+   * 5. Rows With Holes: Heavy penalty for spreading holes across multiple rows
+   * 6. Column Transitions: Penalizes vertical fragmentation (cheese patterns)
+   * 7. Height: Penalizes tall stacks (risk of game over)
+   * 8. Bumpiness: Penalizes uneven surfaces (harder to place pieces)
+   * 9. Terrain Traversability: Uses "funnel pattern" analysis
    *    - Valid funnels: Cliffs that slope from edges toward center (player can climb)
    *    - Split penalties: Cliffs that block player movement across field
-   * 6. Edge Height: Slight bonus for low edges (easier player escape)
-   * 7. Floating Penalty: Discourages placing pieces high without support
-   * 
+   * 10. Edge Height: Slight bonus for low edges (easier player escape)
+   * 11. Floating Penalty: Discourages placing pieces high without support
+   *
    * Difficulty modifies the weight of each component to create different AI behaviors.
-   * 
+   *
    * @param {Object} piece - The piece being evaluated
    * @param {Array} shape - The piece shape
    * @param {Object} diffConfig - Difficulty configuration with scoring weights
@@ -475,9 +479,16 @@ export class AIController {
       heights.push(h);
     }
 
-    // Holes and covered holes
-    let holes = 0,
-      coveredHoles = 0;
+    // Holes analysis with multiple metrics:
+    // - holes: total count of empty cells below blocks
+    // - holeDepth: sum of blocks above each hole (penalizes burying holes)
+    // - weightedHoles: sum of (ROWS - y) for each hole (upper holes worse)
+    // - rowsWithHoles: count of distinct rows containing holes
+    let holes = 0;
+    let holeDepth = 0;
+    let weightedHoles = 0;
+    const rowsWithHolesSet = new Set();
+
     for (let x = 0; x < COLS; x++) {
       let blockFound = false;
       let blocksAbove = 0;
@@ -487,7 +498,28 @@ export class AIController {
           blocksAbove++;
         } else if (blockFound) {
           holes++;
-          coveredHoles += blocksAbove;
+          holeDepth += blocksAbove;
+          weightedHoles += (this.engine.constants.ROWS - y); // Upper holes weighted more
+          rowsWithHolesSet.add(y);
+        }
+      }
+    }
+    const rowsWithHoles = rowsWithHolesSet.size;
+
+    // Column transitions: count vertical empty-to-filled switches
+    // High value indicates fragmented/cheese-like patterns
+    let colTransitions = 0;
+    for (let x = 0; x < COLS; x++) {
+      // Bottom edge counts as filled (transition if bottom cell is empty)
+      if (!gridAfter[this.engine.constants.ROWS - 1][x]) {
+        colTransitions++;
+      }
+      // Count transitions between adjacent cells
+      for (let y = 0; y < this.engine.constants.ROWS - 1; y++) {
+        const current = gridAfter[y][x] ? 1 : 0;
+        const below = gridAfter[y + 1][x] ? 1 : 0;
+        if (current !== below) {
+          colTransitions++;
         }
       }
     }
@@ -504,7 +536,10 @@ export class AIController {
 
     // Calculate individual score components
     const holesScore = holes * diff.holeReward;
-    const coveredHolesScore = coveredHoles * diff.coveredHoleReward;
+    const holeDepthScore = holeDepth * (diff.holeDepthReward ?? 0);
+    const weightedHolesScore = weightedHoles * (diff.weightedHoleReward ?? 0);
+    const rowsWithHolesScore = rowsWithHoles * (diff.rowsWithHolesReward ?? 0);
+    const colTransitionsScore = colTransitions * (diff.colTransitionReward ?? 0);
     const heightScore = heights.reduce((a, b) => a + b, 0) * diff.heightReward;
     const maxBoardHeight = Math.max(...heights);
     const maxHeightScore = maxBoardHeight * diff.maxHeightReward;
@@ -529,7 +564,10 @@ export class AIController {
       linesScore +
       multiLineBonus +
       holesScore +
-      coveredHolesScore +
+      holeDepthScore +
+      weightedHolesScore +
+      rowsWithHolesScore +
+      colTransitionsScore +
       heightScore +
       maxHeightScore +
       dangerScore +
@@ -547,7 +585,10 @@ export class AIController {
       lines: linesScore,
       multiLineBonus,
       holes: holesScore,
-      coveredHoles: coveredHolesScore,
+      holeDepth: holeDepthScore,
+      weightedHoles: weightedHolesScore,
+      rowsWithHoles: rowsWithHolesScore,
+      colTransitions: colTransitionsScore,
       height: heightScore,
       maxHeight: maxHeightScore,
       danger: dangerScore,
@@ -560,7 +601,10 @@ export class AIController {
       heights,
       rawLines: completedLines,
       rawHoles: holes,
-      rawCoveredHoles: coveredHoles,
+      rawHoleDepth: holeDepth,
+      rawWeightedHoles: weightedHoles,
+      rawRowsWithHoles: rowsWithHoles,
+      rawColTransitions: colTransitions,
       rawBumpiness: bumpiness,
       funnelInfo: {
         leftValid: funnelBounds.leftFunnelValidUntil,
