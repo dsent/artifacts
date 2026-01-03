@@ -22,8 +22,8 @@
  */
 
 import fs from 'fs';
-import { DEFAULT_CONSTANTS, TETROMINOES, DIFFICULTY_SETTINGS } from './js/config.js';
-import { getShape, getRandomTetrominoType } from './js/utils.js';
+import { DEFAULT_CONSTANTS, DIFFICULTY_SETTINGS } from './js/config.js';
+import { getShape } from './js/utils.js';
 import { AIController } from './js/ai.js';
 import { GameEngine } from './js/engine.js';
 

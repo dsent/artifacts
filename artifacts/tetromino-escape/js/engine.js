@@ -1156,26 +1156,6 @@ export class GameEngine {
     }
   }
 
-  performErraticMove() {
-    const piece = this.currentPiece;
-    if (Math.random() < 0.1) this.ai.erraticDir *= -1;
-
-    if (this.canPlacePieceWithPlayer(piece, this.ai.erraticDir, 0)) {
-      piece.x += this.ai.erraticDir;
-    } else {
-      this.ai.erraticDir *= -1;
-    }
-
-    if (Math.random() < 0.05) {
-      const newRot = (piece.rotation + 1) % TETROMINOES[piece.type].shapes.length;
-      const newShape = getShape(piece.type, newRot);
-      if (this.canPlacePieceWithPlayer(piece, 0, 0, newShape)) {
-        piece.rotation = newRot;
-        piece.shape = newShape;
-      }
-    }
-  }
-
   gameOver(reason) {
     if (this.status !== "playing") return;
 

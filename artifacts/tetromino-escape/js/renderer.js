@@ -1,4 +1,3 @@
-import { TETROMINOES } from './config.js';
 import { getShape, isChristmasTheme } from './utils.js';
 
 export class GameRenderer {
