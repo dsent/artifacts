@@ -352,10 +352,11 @@ export class AIController {
               // Otherwise allow the move - reward system (dangerZoneReward) handles preference
               // Downward moves are always allowed (player can see piece falling)
               // High-altitude moves are allowed (player has time to react)
+            } else {
+              // Already in danger - mark that path goes through danger
+              // This affects descent behavior (AI won't fast-drop while escaping)
+              this.pathThroughDanger = true;
             }
-
-            // Mark that this path goes through danger (may affect descent behavior)
-            this.pathThroughDanger = true;
           }
         }
 
