@@ -148,6 +148,31 @@
       </div>
     </div>
 
-    <div class="footer">&copy; 2025 Danila Sentyabov // <a href="https://dsent.me" target="_blank" rel="noopener noreferrer">dsent.me</a></div>
+    <div class="footer">
+      &copy; 2025 Danila Sentyabov // <a href="https://dsent.me" target="_blank" rel="noopener noreferrer">dsent.me</a>
+      <span id="buildDate"></span>
+    </div>
+
+    <script>
+      (function() {
+        const buildTimestamp = '<!-- BUILD_TIMESTAMP_PLACEHOLDER -->';
+        if (buildTimestamp && buildTimestamp.includes('-')) {
+          try {
+            const date = new Date(buildTimestamp);
+            const formatted = date.toLocaleString(undefined, {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              timeZoneName: 'short'
+            });
+            document.getElementById('buildDate').textContent = ' // Built: ' + formatted;
+          } catch (e) {
+            console.error('Failed to parse build timestamp:', e);
+          }
+        }
+      })();
+    </script>
   </body>
 </html>

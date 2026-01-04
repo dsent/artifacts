@@ -64,10 +64,16 @@ jobs:
       - name: Generate Index
         run: python scripts/generate_index.py
 
-      - name: Inject Preview Configs
+      - name: Inject Build Timestamps and Preview Configs
         run: |
-          echo "Injecting debug config for tetromino-escape"
+          BUILD_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          echo "Build timestamp: $BUILD_TIMESTAMP"
+          
+          # Inject debug config for tetromino-escape
           echo '{"DEBUG_AI": true}' > dist/tetromino-escape/config.json
+          
+          # Re-generate index with timestamp
+          python scripts/generate_index.py "$BUILD_TIMESTAMP"
 
       - name: Debug Dist
         run: |

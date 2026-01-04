@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 
 
@@ -39,7 +40,7 @@ def get_artifacts():
     return sorted(artifacts, key=lambda x: x["name"])
 
 
-def generate_html(artifacts):
+def generate_html(artifacts, build_timestamp=None):
     items_html = ""
     for artifact in artifacts:
         items_html += f"""
@@ -53,12 +54,18 @@ def generate_html(artifacts):
     with open(template_path, "r", encoding="utf-8") as f:
         template = f.read()
 
-    return template.replace("<!-- ARTIFACTS_LIST_PLACEHOLDER -->", items_html)
+    html = template.replace("<!-- ARTIFACTS_LIST_PLACEHOLDER -->", items_html)
+    
+    if build_timestamp:
+        html = html.replace("<!-- BUILD_TIMESTAMP_PLACEHOLDER -->", build_timestamp)
+    
+    return html
 
 
 if __name__ == "__main__":
+    build_timestamp = sys.argv[1] if len(sys.argv) > 1 else None
     artifacts = get_artifacts()
-    html = generate_html(artifacts)
+    html = generate_html(artifacts, build_timestamp)
     os.makedirs("dist", exist_ok=True)
     with open("dist/index.html", "w", encoding="utf-8") as f:
         f.write(html)

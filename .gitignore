@@ -9,6 +9,10 @@ dist/
 build/
 *.egg-info/
 
+# Deployment-generated configs
+**/config.json
+build-config.json
+
 # Environment Variables
 .env
 .env.local

@@ -57,8 +57,14 @@ jobs:
           done
           cp README.md dist/ || true
 
+      - name: Inject Build Timestamps
+        run: |
+          BUILD_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          echo "Build timestamp: $BUILD_TIMESTAMP"
+          echo "BUILD_TIMESTAMP=$BUILD_TIMESTAMP" >> $GITHUB_ENV
+
       - name: Generate Index
-        run: python scripts/generate_index.py
+        run: python scripts/generate_index.py "$BUILD_TIMESTAMP"
 
       - name: Debug Dist
         run: |
