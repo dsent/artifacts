@@ -209,16 +209,13 @@ export const DIFFICULTY_SETTINGS = {
   easy: {
     id: "easy",
     // Speed and timing
-    baseFallTick: 650,
+    baseFallTick: 500,
     aiMoveInterval: 200,
-    aiSpawnGravityRows: 0, // Use gravity for first N rows after spawn
+    aiSpawnGravityRows: 4, // Use gravity for first N rows after spawn
     aiLandingGravityRows: 5, // Use gravity for last N rows before landing
     aiDangerThreshold: 1, // AI ticks player must stay in danger before retarget
     aiDeadlyMoveThreshold: 2, // Prune horizontal moves entering danger within N rows of landing
-    // Fast drop settings
-    spawnDropDelay: 2,
-    minFastDropHeight: 6,
-    minMovesBeforeFastDrop: 3,
+
     // Line clearing
     lineReward: 1, // Don't reward line clears much
     // Holes - mild penalties, AI builds debris quickly
@@ -250,16 +247,12 @@ export const DIFFICULTY_SETTINGS = {
   normal: {
     id: "normal",
     // Speed and timing
-    baseFallTick: 550,
+    baseFallTick: 400,
     aiMoveInterval: 100,
-    aiSpawnGravityRows: 0, // Use gravity for first N rows after spawn
+    aiSpawnGravityRows: 3, // Use gravity for first N rows after spawn
     aiLandingGravityRows: 4, // Use gravity for last N rows before landing
     aiDangerThreshold: 2, // AI ticks player must stay in danger before retarget
     aiDeadlyMoveThreshold: 3, // Prune horizontal moves entering danger within N rows of landing
-    // Fast drop settings
-    spawnDropDelay: 2,
-    minFastDropHeight: 4,
-    minMovesBeforeFastDrop: 3,
     // Line clearing: slight preference to clear, but not aggressive
     lineReward: 20,
     // Holes: moderate penalties, clears lines but accumulates debris over time
@@ -289,16 +282,12 @@ export const DIFFICULTY_SETTINGS = {
   hard: {
     id: "hard",
     // Speed and timing
-    baseFallTick: 450,
+    baseFallTick: 300,
     aiMoveInterval: 50,
     aiSpawnGravityRows: 0, // Use gravity for first N rows after spawn
     aiLandingGravityRows: 3, // Use gravity for last N rows before landing
     aiDangerThreshold: 4, // AI ticks player must stay in danger before retarget
     aiDeadlyMoveThreshold: 4, // Prune horizontal moves entering danger within N rows of landing
-    // Fast drop settings
-    spawnDropDelay: 0,
-    minFastDropHeight: 3,
-    minMovesBeforeFastDrop: 2,
     // Line clearing: aggressive clearing
     lineReward: 200,
     multiLineBonus: true,
