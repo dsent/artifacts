@@ -1031,6 +1031,36 @@ export class GameEngine {
   }
 
   /**
+   * Check if a player position would collide with the current falling piece
+   * @param {number} px - Player X position
+   * @param {number} py - Player Y position
+   * @returns {boolean} True if collision with current piece
+   */
+  checkPieceCollision(px, py) {
+    if (!this.currentPiece) return false;
+
+    const piece = this.currentPiece;
+    const CELL = this.constants.CELL_SIZE;
+    const pw = this.constants.PLAYER_WIDTH;
+    const ph = this.constants.PLAYER_HEIGHT;
+
+    for (let y = 0; y < piece.shape.length; y++) {
+      for (let x = 0; x < piece.shape[y].length; x++) {
+        if (piece.shape[y][x]) {
+          const bx = (piece.x + x) * CELL;
+          const by = (piece.y + y) * CELL;
+
+          // AABB collision check
+          if (px < bx + CELL && px + pw > bx && py < by + CELL && py + ph > by) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
    * Try to push player down below the piece
    * @param {Object} overlapInfo - Overlap information from findLowestOverlappingBlock
    * @returns {boolean} True if push was successful
@@ -1047,7 +1077,10 @@ export class GameEngine {
         this.constants.PLAYER_HEIGHT
       );
 
-      if (!gridCollision) {
+      // Also check collision with the current piece (not just locked grid)
+      const pieceCollision = this.checkPieceCollision(p.x, pushY);
+
+      if (!gridCollision && !pieceCollision) {
         p.y = pushY;
         p.vy = Math.max(p.vy, 2);
         return true;
@@ -1065,14 +1098,31 @@ export class GameEngine {
   tryPushPlayerHorizontally(overlapInfo) {
     const p = this.player;
 
-    // Calculate both possible push positions
-    const pushLeft = overlapInfo.bx - this.constants.PLAYER_WIDTH;
-    const pushRight = overlapInfo.bx + overlapInfo.bw;
+    // Calculate both possible push positions based on the ENTIRE piece bounds
+    // We need to push outside ALL blocks of the piece, not just the one we detected
+    const piece = this.currentPiece;
+    const CELL = this.constants.CELL_SIZE;
 
-    // Determine primary direction: push away from the block center
-    const blockCenterX = overlapInfo.bx + overlapInfo.bw / 2;
+    // Find the full horizontal extent of the piece
+    let pieceLeft = Infinity, pieceRight = -Infinity;
+    for (let y = 0; y < piece.shape.length; y++) {
+      for (let x = 0; x < piece.shape[y].length; x++) {
+        if (piece.shape[y][x]) {
+          const bx = (piece.x + x) * CELL;
+          pieceLeft = Math.min(pieceLeft, bx);
+          pieceRight = Math.max(pieceRight, bx + CELL);
+        }
+      }
+    }
+
+    // Push positions: completely outside the piece's horizontal extent
+    const pushLeft = pieceLeft - this.constants.PLAYER_WIDTH;
+    const pushRight = pieceRight;
+
+    // Determine primary direction: push away from the piece center
+    const pieceCenterX = (pieceLeft + pieceRight) / 2;
     const playerCenterX = p.x + this.constants.PLAYER_WIDTH / 2;
-    const preferLeft = playerCenterX < blockCenterX;
+    const preferLeft = playerCenterX < pieceCenterX;
 
     // Try primary direction first, then fallback to opposite
     const directions = preferLeft ? [pushLeft, pushRight] : [pushRight, pushLeft];
@@ -1081,15 +1131,13 @@ export class GameEngine {
       // Clamp to screen bounds
       const clampedX = Math.max(0, Math.min(this.width - this.constants.PLAYER_WIDTH, pushX));
 
-      // Check if push position is actually outside the collision
-      // (clamping might push us back into the block)
-      if (clampedX + this.constants.PLAYER_WIDTH <= overlapInfo.bx ||
-          clampedX >= overlapInfo.bx + overlapInfo.bw) {
-        // Check if we can push there (no grid collision)
-        if (!this.checkGridCollisionOnly(clampedX, p.y, this.constants.PLAYER_WIDTH, this.constants.PLAYER_HEIGHT)) {
-          p.x = clampedX;
-          return true;
-        }
+      // Check if we can push there (no grid collision AND no piece collision)
+      const gridCollision = this.checkGridCollisionOnly(clampedX, p.y, this.constants.PLAYER_WIDTH, this.constants.PLAYER_HEIGHT);
+      const pieceCollision = this.checkPieceCollision(clampedX, p.y);
+
+      if (!gridCollision && !pieceCollision) {
+        p.x = clampedX;
+        return true;
       }
     }
 
