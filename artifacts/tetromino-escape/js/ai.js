@@ -18,7 +18,6 @@ export class AIController {
     // Track for meaningful retarget detection
     this.lastTargetKey = null;
     this.lastPlayerGridX = null;
-    this.pathThroughDanger = false;
     this.playerInDangerTicks = 0;
   }
 
@@ -207,9 +206,6 @@ export class AIController {
       return;
     }
 
-    // Reset path danger flag for this calculation
-    this.pathThroughDanger = false;
-
     let bestScore = -Infinity;
     let bestState = null;
     const diffConfig = overrideConfig || this.engine.settings.diffConfig;
@@ -352,11 +348,9 @@ export class AIController {
               // Otherwise allow the move - reward system (dangerZoneReward) handles preference
               // Downward moves are always allowed (player can see piece falling)
               // High-altitude moves are allowed (player has time to react)
-            } else {
-              // Already in danger - mark that path goes through danger
-              // This affects descent behavior (AI won't fast-drop while escaping)
-              this.pathThroughDanger = true;
             }
+            // Danger handling is done at execution time in update(), not here.
+            // BFS explores many paths, so we can't set flags based on exploration.
           }
         }
 
@@ -698,10 +692,13 @@ export class AIController {
 
       const nextStep = this.path[0];
 
-      // If path goes through danger, stop ALL moves (not just down)
-      // This forces retargeting while piece only falls via gravity
-      if (this.pathThroughDanger) {
-        return;
+      // If piece is currently overlapping player, be cautious - only allow escape moves
+      // This prevents fast-dropping onto the player
+      if (this.engine.isPlayerInDangerZone(piece)) {
+        // Allow horizontal/rotation moves to escape, but not fast descent
+        if (nextStep.y > piece.y) {
+          return; // Don't fast-drop while overlapping player
+        }
       }
 
       // If next step is down (y > piece.y)
