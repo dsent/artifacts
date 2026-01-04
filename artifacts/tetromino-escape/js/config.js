@@ -82,17 +82,17 @@ export const DEFAULT_CONSTANTS = {
 // Key Bindings Configuration
 export const KEYBINDINGS = {
   // Movement
-  MOVE_LEFT: ['ArrowLeft', 'KeyA'],
-  MOVE_RIGHT: ['ArrowRight', 'KeyD'],
-  JUMP: ['ArrowUp', 'KeyW', 'Space'],
-  
+  MOVE_LEFT: ["ArrowLeft", "KeyA"],
+  MOVE_RIGHT: ["ArrowRight", "KeyD"],
+  JUMP: ["ArrowUp", "KeyW", "Space"],
+
   // Game Controls
-  PAUSE: ['KeyP', 'Escape'],
-  SABOTAGE: ['KeyS'],
-  DUMP_STATE: ['F9', 'KeyT'],
-  
+  PAUSE: ["KeyP", "Escape"],
+  SABOTAGE: ["KeyS"],
+  DUMP_STATE: ["F9", "KeyT"],
+
   // Scroll prevention keys (keys that should preventDefault)
-  PREVENT_SCROLL: ['ArrowUp', 'ArrowLeft', 'ArrowRight', 'Space'],
+  PREVENT_SCROLL: ["ArrowUp", "ArrowLeft", "ArrowRight", "Space"],
 };
 
 export const TETROMINOES = {
