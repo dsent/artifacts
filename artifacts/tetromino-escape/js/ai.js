@@ -18,7 +18,6 @@ export class AIController {
     // Track for meaningful retarget detection
     this.lastTargetKey = null;
     this.lastPlayerGridX = null;
-    this.pathThroughDanger = false;
     this.playerInDangerTicks = 0;
   }
 
@@ -123,9 +122,24 @@ export class AIController {
   }
 
   /**
+   * Calculate drop distance for a hypothetical piece position
+   * @param {Object} piece - Piece with x, y, shape properties
+   * @returns {number} Number of rows until piece lands
+   */
+  getDropDistanceForPiece(piece) {
+    let dist = 0;
+    let testY = piece.y;
+    while (this.engine.canPlacePiece({ ...piece, y: testY }, 0, 1)) {
+      testY++;
+      dist++;
+    }
+    return dist;
+  }
+
+  /**
    * Check if rotation is possible without collision with locked blocks
    * @param {number} currentX - Current X position
-   * @param {number} currentY - Current Y position  
+   * @param {number} currentY - Current Y position
    * @param {Array} currentShape - Current piece shape
    * @param {Array} nextShape - Next rotation shape
    * @returns {boolean} True if rotation is possible
@@ -191,9 +205,6 @@ export class AIController {
       this.path = [];
       return;
     }
-
-    // Reset path danger flag for this calculation
-    this.pathThroughDanger = false;
 
     let bestScore = -Infinity;
     let bestState = null;
@@ -298,7 +309,7 @@ export class AIController {
         const nextShape = shapes[nextRot];
 
         if (avoidPlayer) {
-          // Check if this step puts the piece in a dangerous position
+          // Check if this step puts the piece in a dangerous position (colliding with player)
           const nextPiece = {
             x: nextX,
             y: nextY,
@@ -321,16 +332,25 @@ export class AIController {
 
             const currentInDanger = this.engine.isPlayerInDangerZone(currentPiece);
 
-            // NEVER enter danger from safety
             if (!currentInDanger) {
-              continue;
-            }
+              // This move would ENTER danger from safety
+              // Only prune if this is a "deadly move": horizontal/rotation near landing
+              const isHorizontalOrRotation = (n.dx !== 0 || n.drot !== 0);
+              const deadlyThreshold = diffConfig.aiDeadlyMoveThreshold ?? 3;
 
-            // If already in danger:
-            // - Allow ALL moves to find escape routes
-            // - Mark that this path goes through danger (affects descent speed)
-            // - The escape penalty in scoring will guide the AI toward safe destinations
-            this.pathThroughDanger = true;
+              if (isHorizontalOrRotation) {
+                const dropDistance = this.getDropDistanceForPiece(nextPiece);
+                if (dropDistance <= deadlyThreshold) {
+                  // This is a surprise attack - prune it
+                  continue;
+                }
+              }
+              // Otherwise allow the move - reward system (dangerZoneReward) handles preference
+              // Downward moves are always allowed (player can see piece falling)
+              // High-altitude moves are allowed (player has time to react)
+            }
+            // Danger handling is done at execution time in update(), not here.
+            // BFS explores many paths, so we can't set flags based on exploration.
           }
         }
 
@@ -406,22 +426,26 @@ export class AIController {
 
   /**
    * Evaluate a piece placement position
-   * 
+   *
    * SCORING SYSTEM:
-   * The AI uses a weighted scoring system with the following components:
-   * 
+   * The AI uses a weighted scoring system based on Dellacherie-Thiery research:
+   *
    * 1. Line Clearing: Rewards completing lines (varies by difficulty)
-   * 2. Holes: Penalizes gaps below blocks (harder to clear)
-   * 3. Height: Penalizes tall stacks (risk of game over)
-   * 4. Bumpiness: Penalizes uneven surfaces (harder to place pieces)
-   * 5. Terrain Traversability: Uses "funnel pattern" analysis
+   * 2. Holes: Base penalty for gaps below blocks
+   * 3. Hole Depth: Extra penalty for blocks above holes (burying makes holes harder to clear)
+   * 4. Weighted Holes: Upper-row holes penalized more than lower-row holes
+   * 5. Rows With Holes: Heavy penalty for spreading holes across multiple rows
+   * 6. Column Transitions: Penalizes vertical fragmentation (cheese patterns)
+   * 7. Height: Penalizes tall stacks (risk of game over)
+   * 8. Bumpiness: Penalizes uneven surfaces (harder to place pieces)
+   * 9. Terrain Traversability: Uses "funnel pattern" analysis
    *    - Valid funnels: Cliffs that slope from edges toward center (player can climb)
    *    - Split penalties: Cliffs that block player movement across field
-   * 6. Edge Height: Slight bonus for low edges (easier player escape)
-   * 7. Floating Penalty: Discourages placing pieces high without support
-   * 
+   * 10. Edge Height: Slight bonus for low edges (easier player escape)
+   * 11. Floating Penalty: Discourages placing pieces high without support
+   *
    * Difficulty modifies the weight of each component to create different AI behaviors.
-   * 
+   *
    * @param {Object} piece - The piece being evaluated
    * @param {Array} shape - The piece shape
    * @param {Object} diffConfig - Difficulty configuration with scoring weights
@@ -475,9 +499,16 @@ export class AIController {
       heights.push(h);
     }
 
-    // Holes and covered holes
-    let holes = 0,
-      coveredHoles = 0;
+    // Holes analysis with multiple metrics:
+    // - holes: total count of empty cells below blocks
+    // - holeDepth: sum of blocks above each hole (penalizes burying holes)
+    // - weightedHoles: sum of (ROWS - y) for each hole (upper holes worse)
+    // - rowsWithHoles: count of distinct rows containing holes
+    let holes = 0;
+    let holeDepth = 0;
+    let weightedHoles = 0;
+    const rowsWithHolesSet = new Set();
+
     for (let x = 0; x < COLS; x++) {
       let blockFound = false;
       let blocksAbove = 0;
@@ -487,7 +518,28 @@ export class AIController {
           blocksAbove++;
         } else if (blockFound) {
           holes++;
-          coveredHoles += blocksAbove;
+          holeDepth += blocksAbove;
+          weightedHoles += (this.engine.constants.ROWS - y); // Upper holes weighted more
+          rowsWithHolesSet.add(y);
+        }
+      }
+    }
+    const rowsWithHoles = rowsWithHolesSet.size;
+
+    // Column transitions: count vertical empty-to-filled switches
+    // High value indicates fragmented/cheese-like patterns
+    let colTransitions = 0;
+    for (let x = 0; x < COLS; x++) {
+      // Bottom edge counts as filled (transition if bottom cell is empty)
+      if (!gridAfter[this.engine.constants.ROWS - 1][x]) {
+        colTransitions++;
+      }
+      // Count transitions between adjacent cells
+      for (let y = 0; y < this.engine.constants.ROWS - 1; y++) {
+        const current = gridAfter[y][x] ? 1 : 0;
+        const below = gridAfter[y + 1][x] ? 1 : 0;
+        if (current !== below) {
+          colTransitions++;
         }
       }
     }
@@ -504,7 +556,10 @@ export class AIController {
 
     // Calculate individual score components
     const holesScore = holes * diff.holeReward;
-    const coveredHolesScore = coveredHoles * diff.coveredHoleReward;
+    const holeDepthScore = holeDepth * (diff.holeDepthReward ?? 0);
+    const weightedHolesScore = weightedHoles * (diff.weightedHoleReward ?? 0);
+    const rowsWithHolesScore = rowsWithHoles * (diff.rowsWithHolesReward ?? 0);
+    const colTransitionsScore = colTransitions * (diff.colTransitionReward ?? 0);
     const heightScore = heights.reduce((a, b) => a + b, 0) * diff.heightReward;
     const maxBoardHeight = Math.max(...heights);
     const maxHeightScore = maxBoardHeight * diff.maxHeightReward;
@@ -529,7 +584,10 @@ export class AIController {
       linesScore +
       multiLineBonus +
       holesScore +
-      coveredHolesScore +
+      holeDepthScore +
+      weightedHolesScore +
+      rowsWithHolesScore +
+      colTransitionsScore +
       heightScore +
       maxHeightScore +
       dangerScore +
@@ -547,7 +605,10 @@ export class AIController {
       lines: linesScore,
       multiLineBonus,
       holes: holesScore,
-      coveredHoles: coveredHolesScore,
+      holeDepth: holeDepthScore,
+      weightedHoles: weightedHolesScore,
+      rowsWithHoles: rowsWithHolesScore,
+      colTransitions: colTransitionsScore,
       height: heightScore,
       maxHeight: maxHeightScore,
       danger: dangerScore,
@@ -560,7 +621,10 @@ export class AIController {
       heights,
       rawLines: completedLines,
       rawHoles: holes,
-      rawCoveredHoles: coveredHoles,
+      rawHoleDepth: holeDepth,
+      rawWeightedHoles: weightedHoles,
+      rawRowsWithHoles: rowsWithHoles,
+      rawColTransitions: colTransitions,
       rawBumpiness: bumpiness,
       funnelInfo: {
         leftValid: funnelBounds.leftFunnelValidUntil,
@@ -628,10 +692,13 @@ export class AIController {
 
       const nextStep = this.path[0];
 
-      // If path goes through danger, stop ALL moves (not just down)
-      // This forces retargeting while piece only falls via gravity
-      if (this.pathThroughDanger) {
-        return;
+      // If piece is currently overlapping player, be cautious - only allow escape moves
+      // This prevents fast-dropping onto the player
+      if (this.engine.isPlayerInDangerZone(piece)) {
+        // Allow horizontal/rotation moves to escape, but not fast descent
+        if (nextStep.y > piece.y) {
+          return; // Don't fast-drop while overlapping player
+        }
       }
 
       // If next step is down (y > piece.y)

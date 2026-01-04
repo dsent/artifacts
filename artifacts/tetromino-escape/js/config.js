@@ -214,15 +214,19 @@ export const DIFFICULTY_SETTINGS = {
     aiSpawnGravityRows: 0, // Use gravity for first N rows after spawn
     aiLandingGravityRows: 5, // Use gravity for last N rows before landing
     aiDangerThreshold: 1, // AI ticks player must stay in danger before retarget
+    aiDeadlyMoveThreshold: 2, // Prune horizontal moves entering danger within N rows of landing
     // Fast drop settings
     spawnDropDelay: 2,
     minFastDropHeight: 6,
     minMovesBeforeFastDrop: 3,
     // Line clearing
     lineReward: 1, // Don't reward line clears much
-    // Holes
-    holeReward: -10, // Mild penalty
-    coveredHoleReward: 0, // Extra penalty for blocks above holes
+    // Holes - mild penalties, AI builds debris quickly
+    holeReward: -5, // Very mild base penalty
+    holeDepthReward: 0, // Don't care about burying holes
+    weightedHoleReward: -1, // Slight preference to keep upper rows clean
+    rowsWithHolesReward: -5, // Mild penalty for spreading holes
+    colTransitionReward: -1, // Minimal fragmentation penalty
     // Height
     heightReward: 0, // Don't penalize height much
     maxHeightReward: 0, // No penalty for max height
@@ -251,15 +255,19 @@ export const DIFFICULTY_SETTINGS = {
     aiSpawnGravityRows: 0, // Use gravity for first N rows after spawn
     aiLandingGravityRows: 4, // Use gravity for last N rows before landing
     aiDangerThreshold: 2, // AI ticks player must stay in danger before retarget
+    aiDeadlyMoveThreshold: 3, // Prune horizontal moves entering danger within N rows of landing
     // Fast drop settings
     spawnDropDelay: 2,
     minFastDropHeight: 4,
     minMovesBeforeFastDrop: 3,
     // Line clearing: slight preference to clear, but not aggressive
     lineReward: 20,
-    // Holes: moderate penalty
-    holeReward: -50,
-    coveredHoleReward: 0,
+    // Holes: moderate penalties, clears lines but accumulates debris over time
+    holeReward: -30, // Moderate base penalty
+    holeDepthReward: -1, // Slight penalty for burying holes
+    weightedHoleReward: -3, // Moderate preference for clean upper rows
+    rowsWithHolesReward: -15, // Moderate penalty for spreading holes
+    colTransitionReward: -5, // Moderate fragmentation penalty
     // Height: slight penalty
     heightReward: -2,
     maxHeightReward: -3,
@@ -285,20 +293,25 @@ export const DIFFICULTY_SETTINGS = {
     aiMoveInterval: 50,
     aiSpawnGravityRows: 0, // Use gravity for first N rows after spawn
     aiLandingGravityRows: 3, // Use gravity for last N rows before landing
-    aiDangerThreshold: 4, // AI ticks player must stay in danger before retarget    // Fast drop settings
+    aiDangerThreshold: 4, // AI ticks player must stay in danger before retarget
+    aiDeadlyMoveThreshold: 4, // Prune horizontal moves entering danger within N rows of landing
+    // Fast drop settings
     spawnDropDelay: 0,
     minFastDropHeight: 3,
     minMovesBeforeFastDrop: 2,
     // Line clearing: aggressive clearing
     lineReward: 200,
     multiLineBonus: true,
-    // Holes: severe penalty
-    holeReward: -100,
-    coveredHoleReward: 0,
+    // Holes: aggressive penalties based on Dellacherie-Thiery research
+    holeReward: -80, // Strong base penalty (reduced slightly since we have more metrics)
+    holeDepthReward: -2, // Penalize burying holes deeper
+    weightedHoleReward: -8, // Upper holes heavily penalized (row 5 = -120, row 17 = -24)
+    rowsWithHolesReward: -35, // Heavy penalty for spreading holes across rows
+    colTransitionReward: -12, // Strong fragmentation penalty (based on BCTS weight)
     // Height: penalize to keep stack low
     heightReward: -4,
     maxHeightReward: -5,
-    // Bumpiness: high penalty for flat surface (easier to clear)
+    // Bumpiness: high penalty for uneven surface
     bumpinessReward: -20,
     // Terrain traversability (funnel-based) - less important on hard
     funnelPenaltyBase: -10,
@@ -323,9 +336,12 @@ export const DIFFICULTY_SETTINGS = {
     // Line clearing: HEAVILY penalize clearing lines
     lineReward: -500,
     multiLineBonus: false,
-    // Holes
+    // Holes: REWARD creating holes and burying them
     holeReward: 10, // REWARD creating holes
-    coveredHoleReward: 10, // REWARD covered holes (makes it harder to clear)
+    holeDepthReward: 5, // REWARD burying holes deeper (harder to clear)
+    weightedHoleReward: 2, // Slightly reward upper holes (traps player)
+    rowsWithHolesReward: 5, // REWARD spreading holes across rows
+    colTransitionReward: 3, // REWARD fragmentation
     // Height: REWARD building high (opposite of normal behavior)
     heightReward: 2,
     maxHeightReward: 5,
