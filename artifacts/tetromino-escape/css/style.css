@@ -125,6 +125,25 @@ body {
   font-size: 0.95em;
 }
 
+/* Copyright styling */
+.copyright {
+  margin-top: 20px;
+  font-size: 0.7em;
+  color: #666;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+.copyright a {
+  color: #888;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.copyright a:hover {
+  color: #4ecca3;
+}
+
 .overlay {
   position: absolute;
   top: 0;
@@ -706,5 +725,10 @@ body {
 
   .mobile-stats {
     display: flex;
+  }
+
+  .copyright {
+    font-size: 0.65em;
+    padding: 0 10px;
   }
 }
