@@ -260,7 +260,7 @@ export const DIFFICULTY_SETTINGS = {
     holeDepthReward: -1, // Slight penalty for burying holes
     weightedHoleReward: -3, // Moderate preference for clean upper rows
     rowsWithHolesReward: -15, // Moderate penalty for spreading holes
-    colTransitionReward: -5, // Moderate fragmentation penalty
+    colTransitionReward: -10, // Moderate fragmentation penalty
     // Height: slight penalty
     heightReward: -2,
     maxHeightReward: -3,
@@ -296,7 +296,7 @@ export const DIFFICULTY_SETTINGS = {
     holeDepthReward: -2, // Penalize burying holes deeper
     weightedHoleReward: -8, // Upper holes heavily penalized (row 5 = -120, row 17 = -24)
     rowsWithHolesReward: -35, // Heavy penalty for spreading holes across rows
-    colTransitionReward: -12, // Strong fragmentation penalty (based on BCTS weight)
+    colTransitionReward: -20, // Strong fragmentation penalty
     // Height: penalize to keep stack low
     heightReward: -4,
     maxHeightReward: -5,
